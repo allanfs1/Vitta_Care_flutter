@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 13% 96%; /* Lighter shade of Alternate */
+    --foreground: 224 71% 4%;
+
+    --card: 220 14% 99%; /* Almost white */
+    --card-foreground: 224 71% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+
+    --primary: 312 95% 58%; /* #fa2dc6 */
+    --primary-foreground: 355 100% 97%;
+
+    --secondary: 196 70% 85%; /* Lighter version of accent */
+    --secondary-foreground: 196 70% 30%;
+
+    --muted: 220 14% 94%; /* Alternate #e0e3e7 */
+    --muted-foreground: 196 70% 65%; /* #6abde0 - ACCENT COLOR */
+
+    --accent: 196 70% 65%; /* #6abde0 */
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 13% 91%; /* Darker Alternate */
+    --input: 220 13% 91%;
+    --ring: 312 95% 50%; /* Ring based on primary */
+
+    --radius: 0.5rem;
+
+    --chart-1: 312 95% 58%;
+    --chart-2: 196 70% 65%;
+    --chart-3: 330 80% 65%;
+    --chart-4: 210 80% 65%;
+    --chart-5: 190 70% 60%;
+    
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 224 71% 4%;
+    --sidebar-primary: 312 95% 58%;
+    --sidebar-primary-foreground: 355 100% 97%;
+    --sidebar-accent: 312 95% 97%;
+    --sidebar-accent-foreground: 312 95% 30%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 312 95% 50%;
+  }
+
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+
+    --card: 224 71% 4%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 312 95% 62%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 196 70% 20%;
+    --secondary-foreground: 196 70% 90%;
+
+    --muted: 215 28% 17%;
+    --muted-foreground: 196 70% 65%; /* #6abde0 - ACCENT COLOR */
+
+    --accent: 196 70% 65%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 312 95% 50%;
+    
+    --chart-1: 312 95% 62%;
+    --chart-2: 196 70% 65%;
+    --chart-3: 330 80% 65%;
+    --chart-4: 210 80% 65%;
+    --chart-5: 190 70% 60%;
+
+    --sidebar-background: 224 71% 4%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 312 95% 62%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 312 95% 12%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 215 28% 17%;
+    --sidebar-ring: 312 95% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+
+/* Print styles for Totem Receipt */
+@media print {
+  body {
+    background: white;
+    margin: 0;
+  }
+
+  /* Hide everything except the print area */
+  body * {
+    visibility: hidden;
+  }
+  
+  #print-receipt, #print-receipt * {
+    visibility: visible;
+  }
+  
+  /* Position and style the print area for thermal printers */
+  #print-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm; /* Common receipt paper width */
+    font-family: monospace;
+    font-size: 10pt; /* Adjust as needed */
+    color: black;
+    background: white;
+    padding: 5px;
+    box-shadow: none;
+    border: none;
+  }
+}

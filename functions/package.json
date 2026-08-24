@@ -1,0 +1,16 @@
+{
+  "name": "vitta-ia-functions",
+  "description": "Cloud Functions de suporte ao chat/IA do Vitta (codebase ia)",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.1"
+  },
+  "private": true
+}
