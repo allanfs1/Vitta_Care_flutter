@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -129,16 +131,23 @@ class _WeekSelectorState extends ConsumerState<WeekSelector> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
+                    // `Wrap` e não `Row`: o selo tem largura própria e o mês
+                    // varia de "Maio de 2026" a "Setembro de 2026". Quando os
+                    // dois não cabem lado a lado, o selo desce uma linha em vez
+                    // de ser cortado — encolher um selo o tornaria ilegível.
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
                           Fmt.monthYear(_referenceMonday),
+                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.2,
                           ),
                         ),
-                        const SizedBox(width: 8),
                         if (isCurrentWeek)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -160,6 +169,7 @@ class _WeekSelectorState extends ConsumerState<WeekSelector> {
                     const SizedBox(height: 2),
                     Text(
                       '${Fmt.dayMonth(days.first)} até ${Fmt.dayMonth(days.last)} • ${weekAppts.length} consultas na semana',
+                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondaryOf(context),
                         fontSize: 12,
@@ -194,14 +204,14 @@ class _WeekSelectorState extends ConsumerState<WeekSelector> {
                       icon: const Icon(Icons.chevron_left_rounded),
                       iconSize: 22,
                       visualDensity: VisualDensity.compact,
-                      tooltip: 'Semana anterior',
+                      tooltip: context.txt.t('home.semanaAnterior'),
                       onPressed: _goToPreviousWeek,
                     ),
                     IconButton(
                       icon: const Icon(Icons.chevron_right_rounded),
                       iconSize: 22,
                       visualDensity: VisualDensity.compact,
-                      tooltip: 'Próxima semana',
+                      tooltip: context.txt.t('home.proximaSemana'),
                       onPressed: _goToNextWeek,
                     ),
                   ],
@@ -421,13 +431,21 @@ class _WeekSelectorState extends ConsumerState<WeekSelector> {
                 children: [
                   Row(
                     children: [
-                      Text(
-                        _sameDay(_selected, today)
-                            ? 'Hoje, ${Fmt.dayMonth(_selected)}'
-                            : '${Fmt.weekdayFull(_selected)}, ${Fmt.dayMonth(_selected)}',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
+                      // Flexível porque o rótulo muda de tamanho com o dia
+                      // selecionado: "Hoje, 25/08" cabe em qualquer lugar, mas
+                      // "Segunda-feira, 25/08" estoura a linha em painéis
+                      // estreitos — um overflow que só aparecia em certos dias
+                      // da semana.
+                      Flexible(
+                        child: Text(
+                          _sameDay(_selected, today)
+                              ? 'Hoje, ${Fmt.dayMonth(_selected)}'
+                              : '${Fmt.weekdayFull(_selected)}, ${Fmt.dayMonth(_selected)}',
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                       if (_sameDay(_selected, today)) ...[
@@ -463,45 +481,59 @@ class _WeekSelectorState extends ConsumerState<WeekSelector> {
               ),
             ),
 
-            // Chips de Filtro por Status (visíveis quando há agendamentos)
-            if (dayAppts.isNotEmpty) ...[
-              _FilterPill(
-                label: 'Todos',
-                count: dayAppts.length,
-                isSelected: _statusFilter == null,
-                onTap: () => setState(() => _statusFilter = null),
+            // Chips de Filtro por Status (visíveis quando há agendamentos).
+            //
+            // A quantidade varia com os status presentes no dia: com os quatro
+            // visíveis eles não cabem ao lado do cabeçalho em painel estreito.
+            // Rolar na horizontal preserva o acesso a todos sem espremer nem
+            // esconder nenhum.
+            if (dayAppts.isNotEmpty)
+              Flexible(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _FilterPill(
+                        label: context.txt.t('home.todos'),
+                        count: dayAppts.length,
+                        isSelected: _statusFilter == null,
+                        onTap: () => setState(() => _statusFilter = null),
+                      ),
+                      if (confirmedCount > 0) ...[
+                        const SizedBox(width: 4),
+                        _FilterPill(
+                          label: context.txt.t('home.confirmados'),
+                          count: confirmedCount,
+                          color: AppColors.success,
+                          isSelected: _statusFilter == AppointmentStatus.confirmed,
+                          onTap: () => setState(() => _statusFilter = _statusFilter == AppointmentStatus.confirmed ? null : AppointmentStatus.confirmed),
+                        ),
+                      ],
+                      if (pendingCount > 0) ...[
+                        const SizedBox(width: 4),
+                        _FilterPill(
+                          label: context.txt.t('home.pendentes'),
+                          count: pendingCount,
+                          color: AppColors.warning,
+                          isSelected: _statusFilter == AppointmentStatus.pending,
+                          onTap: () => setState(() => _statusFilter = _statusFilter == AppointmentStatus.pending ? null : AppointmentStatus.pending),
+                        ),
+                      ],
+                      if (cancelledCount > 0) ...[
+                        const SizedBox(width: 4),
+                        _FilterPill(
+                          label: context.txt.t('home.cancelados'),
+                          count: cancelledCount,
+                          color: AppColors.danger,
+                          isSelected: _statusFilter == AppointmentStatus.cancelled,
+                          onTap: () => setState(() => _statusFilter = _statusFilter == AppointmentStatus.cancelled ? null : AppointmentStatus.cancelled),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
-              if (confirmedCount > 0) ...[
-                const SizedBox(width: 4),
-                _FilterPill(
-                  label: 'Confirmados',
-                  count: confirmedCount,
-                  color: AppColors.success,
-                  isSelected: _statusFilter == AppointmentStatus.confirmed,
-                  onTap: () => setState(() => _statusFilter = _statusFilter == AppointmentStatus.confirmed ? null : AppointmentStatus.confirmed),
-                ),
-              ],
-              if (pendingCount > 0) ...[
-                const SizedBox(width: 4),
-                _FilterPill(
-                  label: 'Pendentes',
-                  count: pendingCount,
-                  color: AppColors.warning,
-                  isSelected: _statusFilter == AppointmentStatus.pending,
-                  onTap: () => setState(() => _statusFilter = _statusFilter == AppointmentStatus.pending ? null : AppointmentStatus.pending),
-                ),
-              ],
-              if (cancelledCount > 0) ...[
-                const SizedBox(width: 4),
-                _FilterPill(
-                  label: 'Cancelados',
-                  count: cancelledCount,
-                  color: AppColors.danger,
-                  isSelected: _statusFilter == AppointmentStatus.cancelled,
-                  onTap: () => setState(() => _statusFilter = _statusFilter == AppointmentStatus.cancelled ? null : AppointmentStatus.cancelled),
-                ),
-              ],
-            ],
           ],
         ),
 
@@ -848,12 +880,17 @@ class _StatusChip extends StatelessWidget {
         children: [
           Icon(status.icon, size: 11, color: status.color),
           const SizedBox(width: 4),
-          Text(
-            status.label,
-            style: TextStyle(
-              color: status.color,
-              fontWeight: FontWeight.w800,
-              fontSize: 10.5,
+          // O rótulo varia de "Pago" a "Não compareceu"; sem folga a pílula
+          // transbordava por uma fração de pixel na largura mais apertada.
+          Flexible(
+            child: Text(
+              status.label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: status.color,
+                fontWeight: FontWeight.w800,
+                fontSize: 10.5,
+              ),
             ),
           ),
         ],

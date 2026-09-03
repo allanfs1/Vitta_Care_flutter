@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../assistente/assistant_anchors.dart';
@@ -55,7 +57,7 @@ class _PacientesScreenState extends ConsumerState<PacientesScreen> {
               controller: _search,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'Buscar paciente',
+                hintText: context.txt.t('pacientes.buscarPaciente'),
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: query.isEmpty
                     ? null

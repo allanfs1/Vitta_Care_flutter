@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/app_providers.dart';
@@ -35,7 +37,7 @@ class RelatoriosScreen extends ConsumerWidget {
           ? EmptyView(
               icon: Icons.description_outlined,
               message: 'Nenhum relatório ainda.\nGere o primeiro com a IA.',
-              actionLabel: 'Gerar relatório',
+              actionLabel: context.txt.t('relatorios.gerarRelatorio'),
               onAction: () => _openGenerator(context),
             )
           : ListView(
@@ -176,9 +178,9 @@ class _GeneratorSheetState extends ConsumerState<_GeneratorSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Gerar relatório', style: theme.textTheme.titleLarge),
+          Text(context.txt.t('relatorios.gerarRelatorio'), style: theme.textTheme.titleLarge),
           const SizedBox(height: AppSpacing.lg),
-          Text('Tipo', style: theme.textTheme.bodyMedium),
+          Text(context.txt.t('relatorios.tipo'), style: theme.textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,
@@ -193,7 +195,7 @@ class _GeneratorSheetState extends ConsumerState<_GeneratorSheet> {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Período', style: theme.textTheme.bodyMedium),
+          Text(context.txt.t('relatorios.periodo'), style: theme.textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,

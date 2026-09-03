@@ -5,6 +5,13 @@
  *
  * `opts.failOn({ coll, filters, agg })` permite simular índice composto ausente
  * (FAILED_PRECONDITION) e exercitar o caminho de fallback.
+ *
+ * `doc.set()`/`doc.update()` **persistem de verdade** no `seed` em memória (com
+ * merge quando `{merge: true}` é passado) e ficam registrados em `writes` —
+ * usado por `lib/publicAgenda.js` (`functions/test/publicAgenda.test.js`), que
+ * precisa ver o que acabou de gravar em consultas seguintes na mesma execução
+ * (ex.: duas solicitações seguidas para o mesmo horário). `doc()` sem `id` gera
+ * um id aleatório, como o `.doc()` real do Firestore.
  */
 
 function ts(d) {
@@ -39,6 +46,7 @@ function match(row, f) {
 function createFakeFirestore(seed = {}, opts = {}) {
   const failOn = opts.failOn || (() => false);
   const reads = { total: 0, queries: [] };
+  const writes = [];
 
   const strip = (row) => { const { id, ...rest } = row; return rest; };
 
@@ -80,30 +88,59 @@ function createFakeFirestore(seed = {}, opts = {}) {
         };
       },
       doc(id) { return makeDoc(coll, id); },
-      async add() { return { id: "new-" + Math.random().toString(36).slice(2, 8) }; },
+      async add(data) {
+        const d = makeDoc(coll, undefined);
+        await d.set(data);
+        return d;
+      },
     };
   }
   function makeDoc(coll, id) {
+    const docId = id ?? ("auto-" + Math.random().toString(36).slice(2, 10));
+    function upsert(data, merge) {
+      const list = seed[coll] || (seed[coll] = []);
+      const idx = list.findIndex((x) => x.id === docId);
+      const base = merge && idx >= 0 ? strip(list[idx]) : {};
+      const row = { id: docId, ...base, ...data };
+      if (idx >= 0) list[idx] = row;
+      else list.push(row);
+    }
     return {
-      id, _ref: true, path: `${coll}/${id}`,
+      id: docId, _ref: true, path: `${coll}/${docId}`,
       async get() {
         reads.total += 1;
-        reads.queries.push({ coll, doc: id });
-        const r = (seed[coll] || []).find((x) => x.id === id);
-        return { exists: !!r, id, data: () => (r ? strip(r) : undefined) };
+        reads.queries.push({ coll, doc: docId });
+        const r = (seed[coll] || []).find((x) => x.id === docId);
+        return { exists: !!r, id: docId, data: () => (r ? strip(r) : undefined) };
       },
-      async update() {}, async set() {},
+      async update(data) {
+        writes.push({ type: "update", coll, id: docId, data });
+        upsert(data, true);
+      },
+      async set(data, options) {
+        writes.push({ type: "set", coll, id: docId, data, options });
+        upsert(data, !!(options && options.merge));
+      },
     };
   }
   function collection(name) { return makeQuery(name, [], null); }
 
   const db = {
     collection,
+    // A transação aplica as escritas de verdade. Antes `update()` era no-op, o
+    // que fazia qualquer código transacional (lock de tarefa, token bucket do
+    // NCBI) "passar" no teste sem nunca gravar — o teste ficava verde
+    // justamente onde o bug moraria. Não há isolamento nem retry aqui: o que se
+    // testa é a lógica dentro da transação, não a semântica do Firestore.
     async runTransaction(fn) {
-      return fn({ async get(r) { return r.get(); }, update() {} });
+      return fn({
+        async get(r) { return r.get(); },
+        set(r, data, options) { return r.set(data, options); },
+        update(r, data) { return r.update(data); },
+      });
     },
   };
-  return { db, reads, Timestamp, ref, ts };
+  return { db, reads, writes, Timestamp, ref, ts };
 }
 
 module.exports = { createFakeFirestore, Timestamp, ref, ts };

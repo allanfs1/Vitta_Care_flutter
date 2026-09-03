@@ -20,6 +20,17 @@ class HelpAnchors {
   static const homeKpis = 'home.kpis';
   static const clinicSwitcher = 'app.clinicSwitcher';
   static const whatsappConnect = 'whatsapp.connect';
+  // Simulador de agenda
+  static const simHeader = 'sim.header';
+  static const simTabs = 'sim.tabs';
+  static const simKpis = 'sim.kpis';
+  static const simFila = 'sim.fila';
+  static const simRecomendacao = 'sim.recomendacao';
+  static const simGrafico = 'sim.grafico';
+  static const simCenarios = 'sim.cenarios';
+  static const simSlots = 'sim.slots';
+  static const simAcoesIa = 'sim.acoesIa';
+  static const simAjuda = 'sim.ajuda';
 }
 
 /// Roteiros de ajuda (passo a passo) por funcionalidade. Fonte determinística
@@ -432,6 +443,143 @@ const List<HelpTour> kHelpTours = [
             'ao paciente automaticamente.',
         anchorId: HelpAnchors.totemCard,
         route: AppRoutes.configuracoes,
+      ),
+    ],
+  ),
+
+  // ───────────────────────────────────────────── Simulador de Agenda
+  HelpTour(
+    id: 'simulador',
+    title: 'Simulador de Agenda',
+    description: 'Como ler a simulação e decidir overbooking com segurança.',
+    icon: Icons.casino_outlined,
+    keywords: [
+      'simulador', 'simulacao', 'simulação', 'monte carlo', 'overbooking',
+      'encaixe', 'encaixes', 'falta', 'faltas', 'previsao', 'previsão',
+      'calibracao', 'calibração', 'lista de espera', 'estouro', 'p95',
+      'sobredispersao', 'sobredispersão',
+    ],
+    steps: [
+      HelpStep(
+        title: 'O que este simulador responde 👋',
+        body: 'Uma pergunta só: **quantos encaixes cabem hoje sem lotar a '
+            'sala de espera?** A resposta não vem de uma média — vem da '
+            'distribuição inteira de faltas possíveis para o dia escolhido, '
+            'porque decidir pela média esconde exatamente os dias ruins que '
+            'geram overbooking.',
+        anchorId: HelpAnchors.simHeader,
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'Trocar o dia',
+        body: 'As setas ao lado de **"Hoje"** movem a simulação um dia para '
+            'trás ou para frente. Cada dia é recalculado do zero — a agenda '
+            'muda, a resposta muda junto.',
+        anchorId: HelpAnchors.simHeader,
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'Quatro abas, quatro perguntas',
+        body: '**Decisão** responde "o que fazer hoje". **Planejador** monta '
+            'a semana inteira de uma vez. **Calibração** confere se os dados '
+            'da clínica sustentam a simulação. **Parâmetros** ajusta como o '
+            'motor calcula. Comece sempre por Decisão.',
+        anchorId: HelpAnchors.simTabs,
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'Os cinco números do topo',
+        body: '**Agendados** é o que já está marcado. **Faltas esperadas** é '
+            'a média — só para contexto, não decide nada sozinha. '
+            '**Cancelam com aviso** libera vaga a tempo de reocupar; falta '
+            'sem aviso não libera. **Faltas P95** é o dia ruim: em 1 a cada '
+            '20 dias, as faltas passam desse número. **Sobredispersão φ** '
+            'mostra se as faltas do dia se movem juntas (chuva, feriado) — '
+            'φ = 1,00 é independência, acima disso elas se contagiam.',
+        anchorId: HelpAnchors.simKpis,
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'A lista de espera vem primeiro',
+        body: 'Antes de pensar em encaixe, este cartão diz quantos pacientes '
+            'da fila dá para chamar com segurança — vagas que **já** '
+            'abriram por cancelamento com aviso. Preencher essa vaga não '
+            'cria espera para ninguém. É sempre a primeira ação, antes de '
+            'qualquer overbooking.',
+        anchorId: HelpAnchors.simFila,
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'A recomendação',
+        body: 'Este cartão é o resultado prático: quantos encaixes cabem '
+            'hoje, ou por que nenhum cabe. Quando aparece **"não abra '
+            'encaixes"**, não é o sistema travando — é a agenda já estar no '
+            'limite sem nenhum encaixe extra. Ignorar esse aviso é o que '
+            'lota a sala de espera.',
+        anchorId: HelpAnchors.simRecomendacao,
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'O gráfico de distribuição',
+        body: 'Cada barra é um número de faltas possível para o dia; a '
+            'altura mostra quantas vezes esse número apareceu na simulação. '
+            'As marcas **P05**, **P50** e **P95** mostram o dia bom, o dia '
+            'típico e o dia ruim. Tem um ícone **"Explicar"** ao lado do '
+            'título — toque nele para a IA ler este gráfico especificamente, '
+            'com os números desta data.',
+        anchorId: HelpAnchors.simGrafico,
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'Cenários de overbooking',
+        body: 'Compara +1, +2, +3 encaixes lado a lado: risco do pior slot, '
+            'receita esperada e ociosidade. A coluna **"Decisão"** mostra se '
+            'aquele cenário passa nos limites configurados em Parâmetros. '
+            'Todos os cenários usam a mesma simulação — comparáveis entre '
+            'si, sem ruído extra de amostragem.',
+        anchorId: HelpAnchors.simCenarios,
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'Risco por slot — o motivo de tudo',
+        body: 'Overbooking é decidido **por médico e por hora**, nunca pela '
+            'agenda inteira: uma falta às 16h não libera vaga às 9h. Esta '
+            'tabela lista os slots mais arriscados primeiro. É aqui que você '
+            'confere qual médico e qual horário estão puxando o risco do '
+            'dia para cima.',
+        anchorId: HelpAnchors.simSlots,
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'As ações de IA',
+        body: 'Além dos ícones de gráfico, a aba de IA reúne leituras '
+            'prontas: explicar o dia, achar o gargalo, testar uma '
+            'intervenção, redigir a mensagem para a fila. A IA **nunca '
+            'calcula** — ela só interpreta o que a simulação já produziu, e '
+            'todo número do texto é conferido: o que não veio da simulação '
+            'aparece marcado com ⚠️. Nada aqui altera a agenda sozinho.',
+        anchorId: HelpAnchors.simAcoesIa,
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'Calibração — antes de confiar nos números',
+        body: 'A aba **Calibração** compara o modelo com o histórico real da '
+            'clínica. Se aparecer **"os dados não permitem calibrar"**, é '
+            'porque a base tem menos histórico do que o necessário, ou falta '
+            'informação — nesse caso, os números da simulação usam taxas '
+            'padrão, não medidas desta clínica. Vale conferir essa aba antes '
+            'de tratar a recomendação como definitiva.',
+        route: AppRoutes.monteCarlo,
+      ),
+      HelpStep(
+        title: 'Pronto! 🎯',
+        body: 'Resumindo o fluxo: **1)** confira a lista de espera, **2)** '
+            'veja a recomendação de encaixes, **3)** olhe os slots de maior '
+            'risco antes de aplicar, **4)** use os ícones de IA quando um '
+            'gráfico não fizer sentido de cara. Toque no ícone **"?"** no '
+            'topo desta tela sempre que quiser rever este tour.',
+        anchorId: HelpAnchors.simAjuda,
+        route: AppRoutes.monteCarlo,
       ),
     ],
   ),

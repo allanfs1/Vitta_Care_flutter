@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -128,7 +130,7 @@ class _DrawerTile extends StatelessWidget {
       selected: selected,
       selectedTileColor: AppColors.primaryLight,
       leading: Icon(selected ? item.selectedIcon : item.icon),
-      title: Text(item.label),
+      title: Text(item.texto(context.txt)),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
       ),

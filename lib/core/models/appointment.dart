@@ -21,6 +21,7 @@ class Appointment {
     this.crm = '',
     this.patientPhone = '',
     this.patientRisk = RiskLevel.low,
+    this.pFaltaPrevista,
     this.preparo = const [],
     this.firstVisit = false,
     this.lateMinutes,
@@ -44,6 +45,14 @@ class Appointment {
   final String crm;
   final String patientPhone;
   final RiskLevel patientRisk;
+
+  /// Probabilidade de falta prevista para ESTE agendamento
+  /// (`tb_faltas_data.probabilidade_falta`), quando existir.
+  ///
+  /// É estritamente melhor que a faixa categórica: a faixa é um resumo de três
+  /// níveis de algo que o pipeline já calcula como número. Quando presente, o
+  /// simulador usa este valor em vez de mapear a faixa para uma taxa média.
+  final double? pFaltaPrevista;
   final List<String> preparo;
   final bool firstVisit;
   final int? lateMinutes;
@@ -57,6 +66,8 @@ class Appointment {
     String? doctorName,
     String? specialty,
     String? crm,
+    RiskLevel? patientRisk,
+    double? pFaltaPrevista,
   }) {
     return Appointment(
       id: id,
@@ -76,7 +87,8 @@ class Appointment {
       observacoes: observacoes,
       crm: crm ?? this.crm,
       patientPhone: patientPhone,
-      patientRisk: patientRisk,
+      patientRisk: patientRisk ?? this.patientRisk,
+      pFaltaPrevista: pFaltaPrevista ?? this.pFaltaPrevista,
       preparo: preparo,
       firstVisit: firstVisit,
       lateMinutes: lateMinutes,

@@ -38,4 +38,34 @@ class AiConfig {
   /// sai do servidor, evitando vazamento no bundle web). Header `api-key` só
   /// deve ser incluído quando esta string não for vazia.
   static String get clientKey => usesProxy ? '' : azureApiKey;
+
+  /// `true` quando as chamadas de IA têm como funcionar: via proxy, ou via
+  /// acesso direto com `AZURE_AI_KEY` embarcada. `false` = só fallback local,
+  /// e qualquer envio ao modelo devolve HTTP 401.
+  static bool get isConfigured => usesProxy || azureApiKey.isNotEmpty;
+
+  /// Rótulo curto do modo de conectividade — para o painel de status da /ia.
+  static AiConnectivity get connectivity => usesProxy
+      ? AiConnectivity.proxy
+      : (azureApiKey.isNotEmpty
+          ? AiConnectivity.direct
+          : AiConnectivity.unconfigured);
+}
+
+/// Como o app fala com o modelo. Ver [AiConfig.connectivity].
+enum AiConnectivity {
+  /// Via Cloud Function `chatProxy` — credencial fica no servidor (produção).
+  proxy,
+
+  /// Acesso direto ao Azure AI Foundry com `AZURE_AI_KEY` de build (dev).
+  direct,
+
+  /// Sem `AI_PROXY_URL` nem `AZURE_AI_KEY` — o modelo recusa (401).
+  unconfigured;
+
+  String get label => switch (this) {
+        AiConnectivity.proxy => 'Chat + agentes (via proxy seguro)',
+        AiConnectivity.direct => 'Chat + agentes (Azure direto)',
+        AiConnectivity.unconfigured => 'Sem credencial — configure AI_PROXY_URL',
+      };
 }

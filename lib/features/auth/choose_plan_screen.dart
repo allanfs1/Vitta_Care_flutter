@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -222,7 +224,7 @@ class _Header extends StatelessWidget {
                     child: const Icon(Icons.favorite, color: Colors.white, size: 18),
                   ),
                   const SizedBox(width: 8),
-                  Text('Vitta', style: theme.textTheme.titleLarge),
+                  Text(context.txt.t('auth.vitta'), style: theme.textTheme.titleLarge),
                 ],
               ),
               const Spacer(),

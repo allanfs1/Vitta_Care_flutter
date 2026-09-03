@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../features/evidencias/pubmed_service.dart';
 import 'mcp_tool.dart';
 import 'tools/agendamentos_tools.dart';
 import 'tools/cerebro_tools.dart';
@@ -8,6 +9,7 @@ import 'tools/comunicacao_tools.dart';
 import 'tools/dados_tools.dart';
 import 'tools/overbooking_sus_tools.dart';
 import 'tools/pacientes_risco_tools.dart';
+import 'tools/pubmed_tools.dart';
 
 /// Servidor MCP em Dart — registro único e reutilizável de todas as ferramentas.
 ///
@@ -67,6 +69,7 @@ class McpServer {
 McpServer createMcpServer({
   FirebaseFirestore? db,
   String? defaultClinicaId,
+  PubmedService? pubmed,
 }) {
   final ctx = McpContext(db: db, defaultClinicaId: defaultClinicaId);
 
@@ -78,6 +81,11 @@ McpServer createMcpServer({
     ...buildDadosTools(ctx),
     ...buildComunicacaoTools(ctx),
     ...buildCerebroTools(ctx),
+    // Evidência científica (PubMed). Registradas mesmo sem [pubmed]: assim o
+    // modelo sabe que a capacidade existe e recebe um erro que explica por quê
+    // ela não está disponível, em vez de responder de memória por não ver a
+    // ferramenta. Ver `.specify/EVIDENCIAS.md` §7.
+    ...buildPubmedTools(ctx, service: pubmed),
   ];
 
   final map = <String, McpTool>{};

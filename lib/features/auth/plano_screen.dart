@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -43,9 +45,9 @@ class PlanoScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Nenhum plano ativo', style: theme.textTheme.titleMedium),
+                    Text(context.txt.t('auth.nenhumPlanoAtivo'), style: theme.textTheme.titleMedium),
                     const SizedBox(height: 4),
-                    Text('Escolha um plano para liberar todos os recursos.',
+                    Text(context.txt.t('auth.escolhaUmPlanoParaLiberarTodosOsRecursos'),
                         style: theme.textTheme.bodyMedium),
                     const SizedBox(height: AppSpacing.md),
                     ElevatedButton.icon(
@@ -67,14 +69,14 @@ class PlanoScreen extends ConsumerWidget {
                 onPressed: () =>
                     context.go('${AppRoutes.choosePlan}?change=true'),
                 icon: const Icon(Icons.swap_horiz),
-                label: Text(plan == null ? 'Escolher plano' : 'Atualizar plano'),
+                label: Text(plan == null ? context.txt.t('auth.escolherPlano') : 'Atualizar plano'),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
 
             // Todos os planos disponíveis (o atual fica marcado).
             SectionHeader(
-              title: 'Todos os planos',
+              title: context.txt.t('auth.todosOsPlanos'),
               subtitle: '${allPlans.length} planos disponíveis',
             ),
             const SizedBox(height: AppSpacing.md),

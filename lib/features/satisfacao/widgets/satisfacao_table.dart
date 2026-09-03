@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/i18n/textos.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/models/patient_feedback.dart';
@@ -196,7 +198,7 @@ class SatisfacaoTable extends StatelessWidget {
                           if (feedback.isCritical) ...[
                             const SizedBox(width: AppSpacing.sm),
                             StatusBadge(
-                              label: 'CRÍTICO',
+                              label: context.txt.t('satisfacao.critico'),
                               color: AppColors.danger,
                               background: AppColors.dangerLight,
                             ),

@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/modules/mcp/mcp_providers.dart';
+import '../../../core/services/ai_config.dart';
 import '../../../core/services/app_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -32,12 +33,27 @@ class AiDashboardRightSidebar extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
           _statusCard(
             context,
-            icon: Icons.bolt,
-            iconColor: Colors.tealAccent,
+            icon: AiConfig.isConfigured ? Icons.bolt : Icons.bolt_outlined,
+            iconColor: AiConfig.isConfigured
+                ? Colors.tealAccent
+                : Colors.orangeAccent,
             title: 'DeepSeek V4 Flash',
-            subtitle: 'Chat + agentes (Azure direto)',
-            statusColor: Colors.tealAccent,
+            subtitle: AiConfig.connectivity.label,
+            statusColor: AiConfig.isConfigured
+                ? Colors.tealAccent
+                : Colors.orangeAccent,
           ),
+          if (!AiConfig.isConfigured)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(
+                'A IA responde só em modo local até o app ser iniciado com '
+                '--dart-define=AI_PROXY_URL=… (ou AZURE_AI_KEY em dev). '
+                'Sem isso, cada envio ao modelo volta 401.',
+                style: TextStyle(
+                    color: AppColors.textSecondaryOf(context), fontSize: 11),
+              ),
+            ),
           _statusCard(
             context,
             icon: Icons.code,

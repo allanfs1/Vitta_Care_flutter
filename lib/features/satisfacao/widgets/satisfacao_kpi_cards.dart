@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/textos.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
@@ -27,7 +29,7 @@ class SatisfacaoKpiCards extends StatelessWidget {
         final children = [
           _buildCard(
             context,
-            title: 'MÉDIA GERAL',
+            title: context.txt.t('satisfacao.mediaGeral'),
             value: mediaGeral.toStringAsFixed(1),
             suffix: '/5.0',
             icon: Icons.trending_up,
@@ -36,7 +38,7 @@ class SatisfacaoKpiCards extends StatelessWidget {
           ),
           _buildCard(
             context,
-            title: 'ÍNDICE NPS',
+            title: context.txt.t('satisfacao.indiceNps'),
             value: nps.toString(),
             icon: Icons.sentiment_satisfied_alt,
             iconColor: Colors.orange,
@@ -44,7 +46,7 @@ class SatisfacaoKpiCards extends StatelessWidget {
           ),
           _buildCard(
             context,
-            title: 'TOTAL FEEDBACKS',
+            title: context.txt.t('satisfacao.totalFeedbacks'),
             value: totalFeedbacks.toString(),
             icon: Icons.chat_bubble_outline,
             iconColor: Colors.blue,
@@ -52,7 +54,7 @@ class SatisfacaoKpiCards extends StatelessWidget {
           ),
           _buildCard(
             context,
-            title: 'CRÍTICOS',
+            title: context.txt.t('satisfacao.criticos'),
             value: criticos.toString(),
             valueColor: AppColors.danger,
             icon: Icons.warning_amber_rounded,

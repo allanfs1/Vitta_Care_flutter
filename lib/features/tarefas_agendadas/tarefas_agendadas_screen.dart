@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/services/app_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/async_states.dart';
@@ -30,11 +31,22 @@ class _TarefasAgendadasScreenState
     super.initState();
     // Catch-up: dispara as tarefas vencidas da clínica ao abrir (uma vez).
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final n = await ref.read(scheduledTasksRunnerProvider).runDue();
-      if (n > 0 && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$n tarefa(s) vencida(s) executada(s).')),
-        );
+      // A tela pode já ter sido descartada (navegação rápida) antes do frame;
+      // e sem Firebase (demo/testes) o runner não tem o que fazer e só erraria.
+      if (!mounted || !ref.read(firebaseEnabledProvider)) return;
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      try {
+        final n = await ref.read(scheduledTasksRunnerProvider).runDue();
+        // `context.mounted`: elemento ainda ATIVO (não só não-descartado) — sem
+        // isso, um `.of(context)` num elemento desativado lança
+        // "Looking up a deactivated widget's ancestor is unsafe".
+        if (n > 0 && context.mounted) {
+          messenger?.showSnackBar(
+            SnackBar(content: Text('$n tarefa(s) vencida(s) executada(s).')),
+          );
+        }
+      } catch (_) {
+        // Catch-up é best-effort: uma falha aqui não pode derrubar a tela.
       }
     });
   }

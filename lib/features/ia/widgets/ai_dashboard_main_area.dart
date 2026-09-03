@@ -64,7 +64,8 @@ class _TopBar extends ConsumerWidget {
                 onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
             ),
-          InkWell(
+          Flexible(
+            child: InkWell(
             borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
             onTap: () {
               if (isDesktop) {
@@ -104,6 +105,7 @@ class _TopBar extends ConsumerWidget {
               ),
             ),
           ),
+          ),
           const SizedBox(width: AppSpacing.lg),
           Container(
             decoration: BoxDecoration(
@@ -119,7 +121,7 @@ class _TopBar extends ConsumerWidget {
           ),
           if (view == IaView.chat) ...[
             const SizedBox(width: AppSpacing.sm),
-            const _InterfacePicker(),
+            const Flexible(child: _InterfacePicker()),
           ],
           const Spacer(),
           Container(
@@ -297,11 +299,14 @@ class _InterfacePicker extends ConsumerWidget {
           children: [
             Icon(style.icon, size: 16, color: style.accent),
             const SizedBox(width: 6),
-            Text(style.label,
-                style: TextStyle(
-                    color: AppColors.textPrimaryOf(context),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold)),
+            Flexible(
+              child: Text(style.label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: AppColors.textPrimaryOf(context),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold)),
+            ),
             if (isAuto) ...[
               const SizedBox(width: 4),
               Text('• auto',

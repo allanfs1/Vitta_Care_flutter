@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import '../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -112,7 +114,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                 NavigationDestination(
                   icon: _anchoredIcon(d.route, Icon(d.icon)),
                   selectedIcon: _anchoredIcon(d.route, Icon(d.selectedIcon)),
-                  label: d.label,
+                  label: d.texto(context.txt),
                 ),
             ],
           ),
@@ -249,7 +251,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                           NavigationRailDestination(
                             icon: _anchoredIcon(d.route, Icon(d.icon)),
                             selectedIcon: _anchoredIcon(d.route, Icon(d.selectedIcon)),
-                            label: Text(d.label),
+                            label: Text(d.texto(context.txt)),
                           ),
                       ],
                     ),

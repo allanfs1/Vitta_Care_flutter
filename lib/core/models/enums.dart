@@ -43,12 +43,20 @@ enum AppointmentStatus {
 
   static AppointmentStatus fromString(String? value) {
     // Normaliza (trim + minúsculas) e cobre os rótulos gravados em
-    // `tb_agendamentos`/Cloud Functions — inclusive `faltou` (escrito por
-    // FirestoreAppointmentService) e as variações de pré-agendado/reagendado,
-    // que antes caíam silenciosamente no default e distorciam métricas.
+    // `tb_agendamentos`/Cloud Functions.
+    //
+    // Sinônimos de `completed` foram expandidos para cobrir variações clínicas
+    // reais que chegam do Firestore (`finalizado`, `compareceu`, `presente`,
+    // etc.). Sem esses mapeamentos, todos os atendimentos sem baixa manual
+    // explícita caíam no default `pending`, zerando a contagem de `realizados`
+    // e bloqueando a calibração de Monte Carlo (problema #1 da tela Calibração).
     switch (value?.toLowerCase().trim()) {
       case 'confirmado':
       case 'confirmed':
+      // `agendado`/`scheduled` indicam consulta marcada — equivalente a
+      // `confirmed` para fins de rastreamento de desfecho.
+      case 'agendado':
+      case 'scheduled':
         return AppointmentStatus.confirmed;
       case 'cancelado':
       case 'cancelled':
@@ -59,11 +67,21 @@ enum AppointmentStatus {
       case 'noshow':
       case 'no-show':
         return AppointmentStatus.noShow;
+      // Sinônimos de "consulta realizada" — expandido em 2026-09-02 para cobrir
+      // variações registradas por diferentes fluxos de clínica. O campo `status`
+      // de `tb_agendamentos` não tem enum fixo; cada integração pode gravar um
+      // rótulo ligeiramente diferente.
       case 'atendido':
       case 'completed':
       case 'realizado':
       case 'concluido':
       case 'concluído':
+      case 'finalizado':
+      case 'finalizada':
+      case 'compareceu':
+      case 'presente':
+      case 'atendida':
+      case 'concluida':
         return AppointmentStatus.completed;
       case 'pre-agendado':
       case 'pré-agendado':
@@ -105,6 +123,24 @@ enum RiskLevel {
     if (score >= 0.66) return RiskLevel.high;
     if (score >= 0.33) return RiskLevel.medium;
     return RiskLevel.low;
+  }
+
+  /// Converte o rótulo gravado em `tb_faltas_data.risco_falta` (ou em campo
+  /// denormalizado no agendamento) para a faixa.
+  ///
+  /// Devolve `null` quando não reconhece — de propósito. Cair em `low` por
+  /// omissão faria todo paciente parecer de baixo risco, que é exatamente o
+  /// modo de falha silenciosa que a estratificação deve evitar.
+  static RiskLevel? fromString(String? v) {
+    final t = v?.trim().toLowerCase();
+    if (t == null || t.isEmpty) return null;
+    return switch (t) {
+      'low' || 'baixo' || 'baixa' || 'l' => RiskLevel.low,
+      'medium' || 'medio' || 'médio' || 'media' || 'média' || 'm' =>
+        RiskLevel.medium,
+      'high' || 'alto' || 'alta' || 'h' => RiskLevel.high,
+      _ => null,
+    };
   }
 }
 

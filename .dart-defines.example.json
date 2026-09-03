@@ -1,0 +1,9 @@
+{
+  "_comentario": "Copie para .dart-defines.json (ignorado pelo git) e preencha.",
+
+  "_quando_usar": "Use o perfil 'vitta-web' (que aponta para o chatProxy) sempre que a Cloud Function estiver de pé — assim a credencial fica no servidor e não entra no bundle web. Este arquivo é o plano B para desenvolver quando a function está fora do ar.",
+
+  "_aviso": "AZURE_AI_KEY entra no bundle JavaScript. NUNCA use este perfil para gerar build de produção.",
+
+  "AZURE_AI_KEY": "cole-a-chave-do-azure-ai-foundry-aqui"
+}

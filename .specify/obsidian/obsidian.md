@@ -1430,24 +1430,45 @@ PIPELINE cerebroConsolidacao(clinicaId, data):
 
 ### 9.1 Catálogo de tools
 
-Registradas em `core/modules/mcp/tools/cerebro_tools.dart`, seguindo o padrão de `McpTool` já existente no projeto.
+> ⚠️ **Estado verificado em 2026-09-01.** Esta tabela listava 14 ferramentas
+> como "registradas em `cerebro_tools.dart`". **Cinco existem**; as outras nove
+> são projeto. A coluna *Estado* diz qual é qual — verificável com
+> `grep -n "name: " lib/core/modules/mcp/tools/cerebro_tools.dart`.
+>
+> Documentar ferramenta planejada como registrada tem custo real: o Vigia e o
+> chat recebem o catálogo do `mcpToolSpecsProvider`, não desta tabela. Um
+> prompt escrito contra a tabela pede `cerebro_caminho`, recebe
+> `ferramenta desconhecida` e gasta uma rodada do loop à toa.
 
-| # | Tool | Tipo | Descrição resumida |
-|---|---|---|---|
-| 1 | `cerebro_buscar` | leitura | Busca híbrida (texto + semântica + grafo) |
-| 2 | `cerebro_ler` | leitura | Lê nota com backlinks/vizinhança opcionais |
-| 3 | `cerebro_grafo` | leitura | Retorna subgrafo em torno de um nó |
-| 4 | `cerebro_vizinhos` | leitura | KNN semântico de uma nota |
-| 5 | `cerebro_caminho` | leitura | Menor caminho entre 2 nós (por que A e B se conectam?) |
-| 6 | `cerebro_listar` | leitura | Lista com filtros (tag/tipo/estado/período) |
-| 7 | `cerebro_escrever` | **escrita** | Cria/atualiza nota (4 modos) |
-| 8 | `cerebro_linkar` | **escrita** | Cria link explícito entre 2 notas |
-| 9 | `cerebro_taguear` | **escrita** | Adiciona/remove tags |
-| 10 | `cerebro_mover` | **escrita** | Renomeia/move com atualização em cascata |
-| 11 | `cerebro_arquivar` | **escrita** | Arquiva (soft) |
-| 12 | `cerebro_diario` | **escrita** | Abre/cria nota diária e faz append em seção |
-| 13 | `cerebro_canvas` | **escrita** | Cria/edita canvas |
-| 14 | `cerebro_reverter` | **escrita** | Reverte nota para versão anterior |
+| # | Tool | Tipo | Estado | Descrição resumida |
+|---|---|---|---|---|
+| 1 | `cerebro_buscar` | leitura | ✅ registrada | Busca no vault (texto + grafo) |
+| 2 | `cerebro_ler` | leitura | ✅ registrada | Lê nota com backlinks opcionais |
+| 3 | `cerebro_listar` | leitura | ✅ registrada | Lista com filtros (tag/tipo/estado/período) |
+| 4 | `cerebro_escrever` | **escrita** | ✅ registrada | Cria/atualiza nota (4 modos) |
+| 5 | `cerebro_linkar` | **escrita** | ✅ registrada | Cria link explícito entre 2 notas |
+| 6 | `cerebro_grafo` | leitura | ⬜ projeto | Retorna subgrafo em torno de um nó |
+| 7 | `cerebro_vizinhos` | leitura | ⬜ projeto | KNN semântico de uma nota (depende de embeddings) |
+| 8 | `cerebro_caminho` | leitura | ⬜ projeto | Menor caminho entre 2 nós (por que A e B se conectam?) |
+| 9 | `cerebro_taguear` | **escrita** | ⬜ projeto | Adiciona/remove tags |
+| 10 | `cerebro_mover` | **escrita** | ⬜ projeto | Renomeia/move com atualização em cascata |
+| 11 | `cerebro_arquivar` | **escrita** | ⬜ projeto | Arquiva (soft) |
+| 12 | `cerebro_diario` | **escrita** | ⬜ projeto | Abre/cria nota diária e faz append em seção |
+| 13 | `cerebro_canvas` | **escrita** | ⬜ projeto | Cria/edita canvas |
+| 14 | `cerebro_reverter` | **escrita** | ⬜ projeto | Reverte nota para versão anterior |
+
+**Nota sobre a busca.** O contrato de `cerebro_buscar` em §9.2 declara
+`modo: texto | semantico | hibrido` e um campo `periodo`. **A ferramenta
+registrada não tem nenhum dos dois** — seu `inputSchema` real é
+`{consulta, tags, tipos, incluirRascunhos, limite}`. Não existe camada
+semântica: `Nota.embeddingVersao` e a coleção `tb_cerebro_vetores` estão
+declarados, mas **nada no código gera embedding**. Na prática a busca é
+textual + grafo. A busca semântica está no backlog
+([`AgentAI.md`](../AgentAI.md) §8, item 12).
+
+Os contratos JSON abaixo descrevem o **desenho** de cada ferramenta, incluindo
+as ainda não implementadas. Use-os como especificação de implementação, não
+como referência de API disponível.
 
 ### 9.2 Contratos (JSON Schema)
 
@@ -2401,9 +2422,78 @@ test/cerebro/
 | Listas longas | `ListView.builder` + `itemExtent` fixo onde possível |
 | Firestore | Paginação de 500, `snapshots()` só no que é reativo (sugestões, aprovação) |
 
-### 13.3 Harness de benchmark
+### 13.3 Estruturas que sustentam a complexidade linear
 
-`test/cerebro/perf/` gera vaults sintéticos (500/2.000/10.000 notas, densidade de link realista via distribuição de lei de potência) e falha o CI se qualquer métrica regredir mais de **15%** contra a linha de base versionada em `test/cerebro/perf/baseline.json`.
+**Implementado em 2026-08-21.** Estas estruturas existem só para manter a
+indexação linear. Parecem redundância de dados; remover qualquer uma devolve o
+comportamento quadrático **sem erro visível** — só lentidão que cresce com o
+vault. Coberto por `test/cerebro/indice_performance_test.dart`.
+
+| Estrutura | Substitui | Por quê |
+|---|---|---|
+| `_idPorPath` | Varredura de `notas.values` em `resolver()` | Era O(notas) **por link**: ~68 milhões de comparações num vault de 3.000 notas com 21.000 arestas |
+| `_aliasDaNota` / `_tagsDaNota` / `_pastaDaNota` | Varredura de `alias`/`tags`/`pastas` ao desindexar | Desindexar uma nota percorria os ~6.000 aliases já registrados |
+| `_textoBusca` (`TextoBusca`) | Normalizar na hora da consulta | A busca fazia `toLowerCase()` + `removerAcentos()` no corpo de **todas** as notas **a cada tecla digitada** |
+| Cache de derivados por `_versao` | Recalcular `orfas`/`linksQuebrados`/`totalArestas` | A status bar e o rail pediam os três a cada build — três varreduras O(N) disparadas por um hover |
+
+**`indexarLote` — uma passada, não duas.** O boot fazia duas passadas
+completas: a primeira registrava as chaves, a segunda **reparseava tudo** para
+religar links cujo alvo ainda não existia. `indexarLote` separa *registrar*
+(`registrarFaixa`) de *resolver* (`resolverFaixa`): quando a resolução começa,
+todas as notas já respondem por suas chaves.
+
+Produz exatamente as mesmas arestas e os mesmos links quebrados que o caminho
+antigo. A única diferença observável é o **desempate de links ambíguos**
+(§5.2 › etapa 8): vence a primeira nota registrada, em vez de quem a
+reindexação tivesse reinserido por último — arbitrário e instável entre
+execuções.
+
+**`removerAcentos`** usa lookup por code unit (`Map<int,int>`) com caminho
+rápido para ASCII puro, que devolve a própria string sem alocar. A versão
+anterior fazia `indexOf` numa string de 24 acentos **por caractere**.
+
+**Resultado medido** (vault sintético, mesma máquina):
+
+| Notas | Antes | Depois |
+|---|---|---|
+| 319 | 786 ms | 331 ms |
+| 1.255 | 3,9 s | 487 ms |
+| 3.127 | **76,5 s** | **966 ms** |
+
+Busca textual em 3.000 notas: 956 ms → **91 ms** por consulta.
+
+### 13.4 Responsividade — o trabalho não pode travar a UI
+
+Reduzir o tempo total não basta: 1 s de trabalho síncrono é 1 s de tela
+congelada. Duas medidas:
+
+- **Boot fatiado** — `VaultNotifier._indexarCedendo` parseia e indexa em lotes
+  de 200, cedendo a thread entre eles (`await Future.delayed(Duration.zero)`) e
+  publicando `progresso` no `VaultEstado`, que alimenta a barra do esqueleto de
+  carregamento. O trabalho total é o mesmo; a diferença é a tela desenhar
+  durante o processo.
+- **Ticker do grafo pausável** — o `Ticker` rodava para sempre, acordando o app
+  60×/s mesmo com a simulação congelada. Agora para quando `engine.tick()`
+  devolve `false` e religa por um listener do `GrafoEngine` (`reaquecer()`
+  chama `notifyListeners`).
+
+> **Ordem no `initState` importa:** o ticker precisa ser criado **antes** do
+> listener. `_ancorarSeLocal()` reaquece o engine e dispararia o callback com
+> `_ticker` ainda não atribuído (`LateInitializationError` no primeiro frame do
+> grafo local).
+
+> **Config precisa ser empurrada.** Com o ticker pausável, mudança de
+> `configGrafoProvider` não chega mais ao engine pelo tick — vai por um
+> `ref.listen` no build. Sem isso, mexer nos sliders de física com o grafo
+> congelado não faria nada.
+
+### 13.5 Harness de benchmark
+
+`test/cerebro/carga_bench_test.dart` gera vaults sintéticos (300/1.200/3.000
+notas, densidade de link realista) e falha se a indexação estourar o orçamento
+por nota. `test/cerebro/indice_performance_test.dart` complementa com um teste
+de **escala**: falha se o tempo crescer de forma quadrática em relação ao
+número de notas, mesmo que o valor absoluto ainda caiba no orçamento.
 
 ---
 

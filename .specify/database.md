@@ -2,9 +2,23 @@
 
 Este documento contém a estrutura atualizada das coleções do Firestore para o projeto **agendaclinica-457713**, analisada automaticamente a partir de dados reais.
 
+> **Três origens neste documento.**
+>
+> 1. **Amostragem automática** — de "Detalhes das Coleções" até "Coleções do app
+>    Flutter", geradas a partir de documentos reais em produção. O tipo de cada
+>    campo vem de **um** documento de exemplo, então campo opcional ou com tipo
+>    variável entre documentos pode não aparecer.
+> 2. **Schema do código** — a seção "Coleções do app Flutter" descreve coleções
+>    criadas por este repositório; extraída do código-fonte, porque algumas ainda
+>    podem não ter documento nenhum em produção.
+> 3. **Análise** — a seção "Problemas estruturais" logo abaixo é conclusão sobre
+>    o schema, verificada contra o código e contra `firestore.indexes.json`.
+>
+> Ao regerar a parte automática, **preserve as seções 2 e 3**.
+
 ## Resumo das Coleções
 
-Total de coleções: 55
+Total de coleções: 62
 
 | Coleção | Status | Documento de Exemplo |
 | --- | --- | --- |
@@ -63,6 +77,177 @@ Total de coleções: 55
 | [`test_permissions`](#test_permissions) | ✅ Ativa | `test` |
 | [`tickets`](#tickets) | ✅ Ativa | `HVfKqPrzrTO4wSg09RAh` |
 | [`users`](#users) | ✅ Ativa | `05HvHSm4poo4IOEbkrkD` |
+
+---
+
+---
+
+## Problemas estruturais
+
+Conclusões da análise de 2026-09-02, verificadas contra o código do app, contra
+as Cloud Functions e contra `firestore.indexes.json`. Não vêm de amostragem.
+
+> **Limitação:** não houve acesso à base viva nesta análise (o servidor MCP do
+> Firebase não conectou). Contagens de documentos e presença real de campos
+> continuam por confirmar; tudo abaixo se apoia em schema, índices e código.
+
+### 🔴 P1 — A chave de tenant tem cinco grafias
+
+| Grafia | Ocorrências no schema | Onde aparece |
+| --- | --- | --- |
+| `idclinica` | 22 | maioria da base legada |
+| `clinicaId` | 14 | coleções criadas por este app |
+| `clinica` | 3 | `dashboard_risco` (como `string`, não `reference`) |
+| `idClinica` | 2 | `tb_agendamentos`, `queue_realoc` |
+| `clinicId` | 1 | `notices` |
+
+O caso grave é **`tb_agendamentos`, que tem `idClinica` e `idclinica` no mesmo
+documento** — dois campos, mesma semântica. Pior: `firestore.indexes.json` tem
+índices publicados para **três** grafias nessa coleção:
+
+    idclinica    18 índices
+    idClinica     2 índices
+    id_clinica    1 índice     ← nem sequer aparece no schema amostrado
+
+O app compensa com **fan-out de assinaturas** em
+`appointment_service.dart:208-209`: abre uma query por grafia e mescla os
+resultados deduplicando por id. Funciona, e custa o dobro de leituras e de
+listeners por clínica. `watchForDoctor` faz o mesmo com **três** formatos de
+`idMedico` (referência, id cru, caminho `tb_medicos/<id>`) — 3× as leituras.
+
+Nada cobre `id_clinica`. Se existir documento com essa grafia, ele é invisível
+para o app.
+
+**Correção sugerida (ordem importa):**
+
+1. Escolher `idclinica` como canônica — é a grafia com 22 ocorrências, 18
+   índices e todas as Cloud Functions. Trocar para `clinicaId` obrigaria a
+   migrar a base inteira e republicar índices.
+2. Backfill: para todo documento com `idClinica` ou `id_clinica` e sem
+   `idclinica`, gravar `idclinica`. Feito por Cloud Function em lote.
+3. Só depois: remover o fan-out do app e apagar os índices órfãos.
+4. Congelar a regra num teste que falhe se alguma escrita nova usar outra
+   grafia.
+
+**Não faça o passo 3 antes do 2.** Remover o fan-out com a base ainda mista
+esconde agendamentos sem erro nenhum — some da tela e ninguém percebe.
+
+### 🔴 P2 — `tb_absenteismo_scores` existe nos índices e ninguém lê
+
+Quatro índices publicados:
+
+    clinicaId, outcome, dataConsulta
+    clinicaId, outcome, riskScore
+    outcome, dataConsulta
+    outcome, riskScore
+
+`outcome` + `riskScore` + `dataConsulta` por clínica é **exatamente** o
+histórico que a calibração do módulo Monte Carlo precisa e não encontra hoje —
+ela cai no `appointmentsProvider`, que só carrega a janela operacional da
+agenda. Nenhum arquivo em `lib/` ou `functions/` menciona a coleção.
+
+Ou ela está populada e o app ignora a melhor fonte que tem, ou está vazia e há
+quatro índices sendo mantidos à toa. **Verificar antes de qualquer outra coisa
+na fase F2** — muda o desenho da calibração.
+
+### 🟡 P3 — Três coleções indexadas e não documentadas
+
+| Coleção | Índices | Código que usa |
+| --- | --- | --- |
+| `chat_response` | `tel+created_at`, `tel+date` | nenhum |
+| `tb_agent_actions` | `status+executedAt` | nenhum |
+| `tb_agent_plans` | `clinicaId+createdAt` | `agent_plans_service.dart` ✅ |
+
+`tb_agent_plans` é do app e faltava neste documento — corrigido abaixo. As duas
+primeiras não têm consumidor: ou são de um pipeline externo (n8n?), ou são
+resíduo de código removido. Índice sem consumidor custa escrita em toda
+gravação da coleção.
+
+### 🟡 P4 — Mesma informação com tipos diferentes
+
+| Campo | Coleção | Tipo | Deveria |
+| --- | --- | --- | --- |
+| `tipo_consulta` | `tb_historico` | `timestamp` | `string` — o nome diz o que é |
+| `telefone` | `tb_conversas` | `number` | `string` |
+| `tel` | `chat_history`, `session_chat` | `number` | `string` |
+| `idclinica` | `tb_avaliacoes`, `tb_historico`, `tb_relatorio_ia` | `string` | `reference`, como nas demais |
+| `clinica` | `dashboard_risco` | `string` | idem |
+
+**Telefone como número é defeito, não estilo.** Perde zero à esquerda, estoura
+precisão em número internacional longo e impede prefixo com `+`. As coleções
+que acertam (`tb_agendamentos.telefonePaciente`, `queue_realoc`) usam `string`.
+
+`tb_historico.tipo_consulta` como `timestamp` provavelmente é campo trocado na
+escrita — vale conferir o produtor antes de migrar.
+
+### 🟡 P5 — Denormalização que vai estourar o limite de documento
+
+`tb_configuracao_chat.medicos` é um `array<map>` com o **cadastro inteiro** de
+cada médico: dados pessoais, especialidades, foto, ticket e a agenda completa
+dos sete dias da semana. É uma cópia de `tb_medicos` dentro de um documento de
+configuração.
+
+Dois problemas: o documento cresce com o número de médicos e **o teto do
+Firestore é 1 MB**; e a cópia envelhece — alterar o horário em `tb_medicos` não
+atualiza aqui.
+
+O mesmo vale para `tb_configuracao_chat.clinica`, que duplica campos de
+`tb_clinica` e ainda acrescenta `cidade`, `estado`, `endereco`, `site`,
+`modalidade` e `especialidades` — que **não existem** em `tb_clinica`. Ou seja:
+a fonte de verdade do endereço da clínica hoje é um documento de configuração
+de chat.
+
+### 🟡 P6 — CPF como id de documento
+
+`patient_reputation` usa o CPF como id (`00357184256`) e ainda guarda `cpf`
+dentro. Id de documento aparece em log de acesso, em chave de índice, em URL de
+console e em mensagem de erro — lugares onde dado pessoal não deveria estar, e
+que não se apagam com um `delete` do documento.
+
+`tb_avaliacoes.pacienteCpf` e `tb_agendamentos.cpf` guardam CPF em campo, o que
+é tratável; o id não é.
+
+**Correção:** id sintético (o próprio `patientId`) e CPF só em campo, para poder
+ser apagado a pedido do titular sem recriar o documento.
+
+### 🟢 P7 — Campos de depuração em produção
+
+`tb_faltas_data._debug_agendamentoId` e `._debug_clinicId` duplicam
+`idConsulta` e `idclinica`, que já existem como `reference` no mesmo documento.
+Custam escrita e espaço em toda predição gravada.
+
+### 🟢 P8 — Data representada três vezes
+
+`dashboard_risco` guarda `timestampConsulta` (`timestamp`), `dataConsulta`
+(`string`) **e** `ano`/`mes`/`dia`/`hora` como números separados. Três
+representações que podem divergir; a decomposição em números só se justifica se
+houver agregação que dependa dela — e aí o custo é manter as três em sincronia.
+
+### 🟢 P9 — Erros de digitação congelados no schema
+
+| Onde | Está | Deveria |
+| --- | --- | --- |
+| coleção | `tb_horaios_atendimento` | `tb_horarios_atendimento` |
+| `tb_medicos` | `horaiosAtendimento` | `horariosAtendimento` |
+| `tb_medicos` | `tiket` | `ticket` (grafia usada em `tb_agendamentos`) |
+| `tb_config_whatsapp` | `intanceId` | `instanceId` |
+
+O app já convive com eles (`doctor_service.dart:189,244` lê e escreve `tiket`),
+com comentário explicando. **Renomear exige migração** — enquanto não houver,
+o valor deste registro é evitar que alguém "conserte" um lado só e quebre o
+outro.
+
+### Resumo de prioridade
+
+| # | Problema | Impacto | Bloqueia |
+| --- | --- | --- | --- |
+| P1 | Cinco grafias de tenant | Dobra leituras; risco de sumiço silencioso | Redução de custo |
+| P2 | `tb_absenteismo_scores` órfã | Pode ser a fonte de histórico que falta | Fase F2 da calibração |
+| P3 | Índices sem consumidor | Custo de escrita | — |
+| P4 | Tipos divergentes | Telefone perde dígito | Integração WhatsApp |
+| P5 | Denormalização de médicos | Teto de 1 MB, dado velho | Clínica com muitos médicos |
+| P6 | CPF como id | LGPD | Auditoria |
+| P7–P9 | Debug, data triplicada, typos | Custo e confusão | — |
 
 ---
 
@@ -1332,3 +1517,246 @@ Total de coleções: 55
 
 ---
 
+---
+
+## Coleções do app Flutter
+
+Criadas e mantidas por **este repositório** (`vitta_app`). Schema extraído do
+código-fonte — a fonte de verdade de cada uma está indicada. Diferente das
+seções acima, não vêm de amostragem de documentos reais.
+
+Todas são escopadas por clínica. Atenção ao **nome do campo de tenant**: as
+coleções novas usam `clinicaId` (camelCase); boa parte da base legada usa
+`idclinica` (ver `CUSTO.md` §6.6). `tb_relatorio_ia` usa `idclinica` por já
+existir antes.
+
+| Coleção | Campo de tenant | Fonte de verdade |
+| --- | --- | --- |
+| [`tb_cerebro_notas`](#tb_cerebro_notas) | `clinicaId` | `nota.dart › Nota.toMap()` |
+| [`tb_cerebro_eventos`](#tb_cerebro_eventos) | `clinicaId` | `cerebro_tools.dart › _auditar()` |
+| [`tb_vigia_ciclos`](#tb_vigia_ciclos) | id do doc | `vigia_models.dart › ResultadoCiclo` |
+| [`tb_notas_clinicas`](#tb_notas_clinicas) | `clinicaId` | `notas_clinicas_repository.dart` |
+| [`tb_agentes`](#tb_agentes) | `clinicaId` | `agent_model.dart › toFirestore()` |
+| [`tb_filas`](#tb_filas) | `clinicaId` | `queue_model.dart › toFirestore()` |
+| [`tb_notificacoes`](#tb_notificacoes) | `clinicaId` | `notificacoes_repository.dart` |
+| [`tb_agent_plans`](#tb_agent_plans) | `clinicaId` | `agent_plans_service.dart` |
+
+---
+
+### <a name="tb_cerebro_notas"></a>`tb_cerebro_notas`
+
+Notas do **Cérebro** — o segundo cérebro da clínica (`obsidian/obsidian.md`).
+Exclusão é *soft* (`deletedAt`); a purga física é da Cloud Function.
+
+| Campo | Tipo | Nota |
+| --- | --- | --- |
+| `clinicaId` | `string` | Isolamento multi-tenant, reforçado no cliente |
+| `path` | `string` | Caminho tipo arquivo (`protocolos/confirmacao.md`) — chave de resolução de links |
+| `titulo` | `string` | |
+| `aliases` | `array<string>` | Nomes alternativos que resolvem para esta nota |
+| `tipo` | `string` | `nota` \| `analise` \| `diario` \| `protocolo` \| … |
+| `tags` | `array<string>` | Hierárquicas (`clinica/risco` indexa também `clinica`) |
+| `cor` | `string?` | |
+| `conteudo` | `string` | Markdown (VFM). Acima de 900 KB a gravação é recusada |
+| `frontmatter` | `map` | |
+| `outLinks` | `array<string>` | Chaves de nó de destino |
+| `entityRefs` | `array<map>` | `[[@tipo:id]]` — vínculos com entidades do sistema |
+| `headings`, `blocos` | `array` | Estrutura do documento |
+| `wordCount`, `charCount`, `tempoLeituraSeg` | `number` | |
+| `metrics` | `map` | `inDegree`, `outDegree`, `pagerank`, `cluster`, `centralidadeIntermediacao` |
+| `origem` | `string` | `humano` \| `agente` |
+| `agenteId`, `confianca`, `revisadoPor` | opcionais | Preenchidos quando `origem = agente` |
+| `estado` | `string` | `publicada` \| `rascunho` \| `arquivada` |
+| `sensivel`, `fixada`, `favorita` | `boolean` | |
+| `versao` | `number` | Controle de conflito (transação no `salvar`) |
+| `embeddingVersao` | `number` | Reservado para busca semântica |
+| `createdAt/By`, `updatedAt/By`, `deletedAt` | | |
+
+> **Ids `nt_demo_*`** identificam a carga de demonstração sintética. Só são
+> criados por ação explícita do usuário e podem ser removidos em massa por
+> "Limpar dados de demonstração". Nota escrita por gente nunca tem esse prefixo.
+
+**Índice necessário:** `clinicaId ASC, updatedAt DESC` (já publicado). A leitura
+tem fallback: se o índice faltar (`failed-precondition`), carrega sem `orderBy`
+e ordena no cliente.
+
+---
+
+### <a name="tb_cerebro_eventos"></a>`tb_cerebro_eventos`
+
+Auditoria das escritas do **agente de IA** no Cérebro. Toda gravação via
+`cerebro_escrever` / `cerebro_linkar` registra um evento aqui.
+
+| Campo | Tipo |
+| --- | --- |
+| `clinicaId` | `string` |
+| `notaId` | `string` |
+| `acao` | `string` (`criar` \| `append` \| `substituir` \| `linkar`) |
+| `ator`, `atorTipo` | `string` (`agente`) |
+| `motivo` | `string` — obrigatório na tool; é a justificativa auditável |
+| `versaoDepois` | `number` |
+| `confianca` | `number` (0..1) |
+| `criadoEm` | `timestamp` |
+
+> Falha ao auditar **não** bloqueia o agente — a nota é gravada de qualquer
+> forma. Auditoria indisponível não deve travar o fluxo clínico.
+
+---
+
+### <a name="tb_vigia_ciclos"></a>`tb_vigia_ciclos`
+
+Auditoria dos ciclos do **Vigia** e, ao mesmo tempo, a **trava diária** que
+impede ciclo duplo (`VIGIA.md` §7).
+
+**Id do documento:** `{clinicaId}_{YYYY-MM-DD}` — a chave é o próprio id.
+
+| Campo | Tipo | Nota |
+| --- | --- | --- |
+| `executou` | `boolean` | `true` só quando o ciclo concluiu. Falha **não** marca `true`, para o próximo boot tentar de novo |
+| `motivo` | `string` | Resumo legível do resultado ou da recusa |
+| `relatorioId` | `string?` | |
+| `sugestoesCriadas` | `number` | |
+| `sugestoesDescartadas` | `number` | Dedupe/confiança/malformadas — sinal de calibração |
+| `notaCerebroId` | `string?` | |
+| `duracaoMs` | `number` | |
+| `origem` | `string` | `cron` quando veio da Cloud Function |
+| `iniciadoEm`, `em` | `timestamp` | |
+
+---
+
+### <a name="tb_notas_clinicas"></a>`tb_notas_clinicas`
+
+Notas clínicas por paciente (PAC-05). Não confundir com `tb_cerebro_notas` —
+estas são observações sobre **um paciente específico**, escritas na tela de
+detalhe do paciente.
+
+| Campo | Tipo |
+| --- | --- |
+| `clinicaId` | `string` |
+| `pacienteId` | `string` |
+| `autor` | `string` (nome de exibição de quem escreveu) |
+| `texto` | `string` |
+| `createdAt` | `timestamp` |
+
+**Índice:** nenhum composto necessário — a query usa duas igualdades
+(`clinicaId` + `pacienteId`) e ordena no cliente.
+
+---
+
+### <a name="tb_agentes"></a>`tb_agentes`
+
+Atendentes do módulo de filas. Nomes de campo espelham o contrato de
+`AGENTS.md` §1.1.
+
+| Campo | Tipo | Nota |
+| --- | --- | --- |
+| `clinicaId` | `string` | |
+| `nomeOperacional` | `string` | |
+| `email` | `string` | Normalizado para minúsculo; é o login |
+| `accessPin` | `string` | 6 dígitos — **também a senha inicial do Firebase Auth** |
+| `disponibilidade` | `string` | `online` \| `busy` \| `away` \| `offline` |
+| `assignedQueues` | `array<string>` | Nomes das filas |
+| `activeChats` | `number` | Carga atual — **não é atualizada em tempo real** (ver nota) |
+| `maxConcurrentChats` | `number` | Teto de atendimentos simultâneos |
+
+> **`activeChats` é estado de sessão, por decisão explícita.** Muda a cada
+> mensagem; persistir cada passo custaria uma escrita por evento de chat. O que
+> sobrevive ao restart é o cadastro e a `disponibilidade`.
+
+O cadastro é um **double write**: `users/{uid}` (perfil + `roles: ['agente']`)
+criado junto, com o login no Firebase Auth feito numa instância secundária para
+não derrubar a sessão do admin.
+
+---
+
+### <a name="tb_filas"></a>`tb_filas`
+
+Filas/departamentos de atendimento.
+
+| Campo | Tipo | Nota |
+| --- | --- | --- |
+| `clinicaId` | `string` | |
+| `name` | `string` | |
+| `distributionStrategy` | `string` | `least_occupied` \| `round_robin` |
+| `sla` | `map` | `{ firstResponseSeconds, resolutionSeconds }` |
+| `agentIds` | `array<string>` | |
+
+---
+
+### <a name="tb_notificacoes"></a>`tb_notificacoes`
+
+Feed de notificações do centro de avisos.
+
+| Campo | Tipo | Nota |
+| --- | --- | --- |
+| `clinicaId` | `string` | |
+| `tipo` | `string` | `agendamento` \| `cancelamento` \| `risco` \| `relatorio` \| `ticket` \| `overbooking` |
+| `titulo`, `mensagem` | `string` | |
+| `time` | `timestamp` | |
+| `lida` | `boolean` | |
+
+Teto de 200 no carregamento — notificação é fluxo, não arquivo. "Marcar todas
+como lidas" usa batch (limite de 500 operações do Firestore respeitado).
+
+---
+
+### <a name="tb_agent_plans"></a>`tb_agent_plans`
+
+Planos salvos do agente de IA (painel de IA → planos). Estava **fora deste
+documento** apesar de ter índice publicado — corrigido em 2026-09-02.
+
+| Campo | Tipo | Nota |
+| --- | --- | --- |
+| `clinicaId` | `string` | |
+| `createdAt` | `timestamp` | |
+
+**Índice publicado:** `clinicaId ASC, createdAt DESC`.
+
+> O schema acima vem do índice e de `agent_plans_service.dart`; os demais campos
+> não foram conferidos contra documento real. Regerar a amostragem completa a
+> próxima vez que houver acesso à base.
+
+---
+
+## Coleções indexadas sem consumidor conhecido
+
+Têm índice publicado em `firestore.indexes.json`, mas **nenhuma referência** em
+`lib/` ou `functions/`. Ficam registradas aqui para não sumirem numa próxima
+regeração — e porque índice sem consumidor custa escrita em toda gravação.
+
+### <a name="tb_absenteismo_scores"></a>`tb_absenteismo_scores`
+
+Campos inferidos dos índices: `clinicaId`, `outcome`, `riskScore`,
+`dataConsulta`.
+
+**Provavelmente a fonte de histórico que a calibração do Monte Carlo procura.**
+Desfecho + escore de risco + data, por clínica, é exatamente a tabela de treino
+que o módulo `monte_carlo` monta hoje a partir da agenda operacional — que só
+carrega a janela próxima. Ver "Problemas estruturais → P2".
+
+Índices publicados:
+
+    clinicaId, outcome, dataConsulta
+    clinicaId, outcome, riskScore
+    outcome, dataConsulta
+    outcome, riskScore
+
+Os dois últimos, **sem `clinicaId`**, permitem consulta cruzando clínicas. Se a
+coleção for usada, revisar `firestore.rules` antes: índice não é permissão, mas
+sinaliza que alguém pretendeu consultar assim.
+
+### <a name="tb_agent_actions"></a>`tb_agent_actions`
+
+Campos inferidos: `status`, `executedAt`. Índice `status ASC, executedAt DESC`.
+
+Sem `clinicaId` no índice — se guardar ação de agente por clínica, a consulta
+por tenant não tem índice composto.
+
+### <a name="chat_response"></a>`chat_response`
+
+Campos inferidos: `tel`, `created_at`, `date`. Dois índices: `tel+created_at` e
+`tel+date` — duas datas diferentes para a mesma coleção, sinal de schema que
+mudou sem limpar o anterior.
+
+`tel` como chave sugere o mesmo padrão de `chat_history` e `session_chat`, onde
+o telefone é `number` (ver P4).

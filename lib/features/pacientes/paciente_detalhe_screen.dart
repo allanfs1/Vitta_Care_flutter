@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/enums.dart';
@@ -84,7 +86,7 @@ class PacienteDetalheScreen extends ConsumerWidget {
                       Icon(highRisk ? Icons.warning_amber_rounded : Icons.shield_outlined,
                           color: p.riskLevel.color, size: 18),
                       const SizedBox(width: 8),
-                      Text('Risco de faltas',
+                      Text(context.txt.t('pacientes.riscoDeFaltas'),
                           style: theme.textTheme.bodyMedium),
                       const Spacer(),
                       Text(p.riskLevel.label,
@@ -116,7 +118,7 @@ class PacienteDetalheScreen extends ConsumerWidget {
                     Expanded(
                       child: _StatBox(
                           value: '${p.attendedYtd}',
-                          label: 'Atendidos',
+                          label: context.txt.t('pacientes.atendidos'),
                           color: AppColors.success,
                           bg: AppColors.successLight),
                     ),
@@ -124,7 +126,7 @@ class PacienteDetalheScreen extends ConsumerWidget {
                     Expanded(
                       child: _StatBox(
                           value: '${p.absencesYtd}',
-                          label: 'Faltas',
+                          label: context.txt.t('pacientes.faltas'),
                           color: AppColors.danger,
                           bg: AppColors.dangerLight),
                     ),
@@ -152,9 +154,9 @@ class PacienteDetalheScreen extends ConsumerWidget {
 
           // Notas clínicas
           SectionHeader(
-            title: 'Notas clínicas',
+            title: context.txt.t('pacientes.notasClinicas'),
             icon: Icons.edit_note,
-            actionLabel: 'Adicionar',
+            actionLabel: context.txt.t('pacientes.adicionar'),
             onAction: () => _addNote(context, ref, p),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -195,32 +197,60 @@ class PacienteDetalheScreen extends ConsumerWidget {
 
   void _addNote(BuildContext context, WidgetRef ref, Patient p) {
     final controller = TextEditingController();
+    var salvando = false;
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nova nota clínica'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 4,
-          decoration: const InputDecoration(hintText: 'Descreva a observação…'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                ref.read(clinicalNotesProvider.notifier).add(
-                      p,
-                      ClinicalNote('Hoje — Você', 'Você', text),
-                    );
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('Salvar'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Nova nota clínica'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLines: 4,
+            enabled: !salvando,
+            decoration: const InputDecoration(hintText: 'Descreva a observação…'),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: salvando ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: salvando
+                  ? null
+                  : () async {
+                      final text = controller.text.trim();
+                      if (text.isEmpty) return;
+
+                      setState(() => salvando = true);
+                      final autor = ref.read(currentUserProvider).fullName;
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        // A tela só mantém a nota depois que o banco confirmou —
+                        // antes, "Salvar" fechava o diálogo mesmo sem gravar nada.
+                        await ref.read(clinicalNotesProvider.notifier).add(
+                              p,
+                              ClinicalNote('Hoje — $autor', autor, text),
+                            );
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      } catch (e) {
+                        setState(() => salvando = false);
+                        messenger.showSnackBar(SnackBar(
+                          backgroundColor: AppColors.danger,
+                          content: Text('Não foi possível salvar: $e'),
+                        ));
+                      }
+                    },
+              child: salvando
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Salvar'),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -79,8 +79,10 @@ class AgentOrchestrator extends StateNotifier<OrchestratorState> {
     final timeout = Duration(seconds: _ref.read(agentTimeoutProvider));
     // Lote de paralelismo configurável (baixo evita rajada → 429 na IA).
     final batchSize = _ref.read(agentBatchSizeProvider).clamp(1, 8);
-    Future<String> callTool(String n, Map<String, dynamic> a) async =>
-        (await server.callTool(n, a)).text;
+    Future<ToolOutcome> callTool(String n, Map<String, dynamic> a) async {
+      final r = await server.callTool(n, a);
+      return (text: r.text, isError: r.isError);
+    }
 
     // 1) Planejamento
     state = OrchestratorState(

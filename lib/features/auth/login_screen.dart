@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -168,8 +170,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final firebaseEnabled = ref.watch(firebaseEnabledProvider);
 
     return AuthScaffold(
-      title: 'Bem-vindo de volta',
-      subtitle: 'Acesse o painel da sua clínica.',
+      title: context.txt.t('auth.bemVindoDeVolta'),
+      subtitle: context.txt.t('auth.acesseOPainelDaSuaClinica'),
       child: Form(
         key: _formKey,
         child: Column(
@@ -194,9 +196,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             TextFormField(
               controller: _password,
               obscureText: _obscure,
-              validator: (v) => Validators.required(v, 'Senha'),
+              validator: (v) => Validators.required(v, context.txt.t('auth.senha')),
               decoration: InputDecoration(
-                labelText: 'Senha',
+                labelText: context.txt.t('auth.senha'),
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
                   icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
@@ -356,7 +358,7 @@ class _FirebaseSetupBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Modo demonstração',
+                Text(context.txt.t('auth.modoDemonstracao'),
                     style: theme.textTheme.titleMedium
                         ?.copyWith(color: AppColors.warning)),
                 const SizedBox(height: 2),
@@ -397,8 +399,8 @@ class _FirstAccessCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Primeiro acesso?', style: theme.textTheme.titleMedium),
-                Text('Crie sua conta e configure a clínica.',
+                Text(context.txt.t('auth.primeiroAcesso'), style: theme.textTheme.titleMedium),
+                Text(context.txt.t('auth.crieSuaContaEConfigureAClinica'),
                     style: theme.textTheme.bodySmall),
               ],
             ),

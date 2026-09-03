@@ -17,6 +17,9 @@ import '../../core/widgets/charts.dart';
 import '../../core/widgets/next_appointments_carousel.dart';
 import '../../core/widgets/section_header.dart';
 import '../../navigation/app_router.dart';
+import '../agenda_publica/widgets/compartilhar_agenda_dialog.dart';
+import '../totem/models/totem_config.dart';
+import '../totem/providers/totem_config_provider.dart';
 import 'medico_form_screen.dart';
 
 /// Detalhe do médico com estatísticas, ativação/desativação e exclusão lógica
@@ -60,6 +63,20 @@ class MedicoDetalheScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Médico'),
         actions: [
+          IconButton(
+            tooltip: 'Compartilhar agenda',
+            icon: const Icon(Icons.share_outlined),
+            onPressed: () {
+              final tc =
+                  ref.read(publicTotemConfigProvider(d.clinicId)).valueOrNull ??
+                      const TotemConfig();
+              CompartilharAgendaDialog.show(
+                context,
+                doctor: d,
+                config: tc,
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Editar',
             icon: const Icon(Icons.edit_outlined),
@@ -362,8 +379,23 @@ class MedicoDetalheScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // QR Code para a agenda pública (qualquer pessoa acessa sem login).
-          _AgendaQrCard(doctorId: d.id),
+          // QR Codes públicos (qualquer pessoa acessa sem login): a página de
+          // divulgação do médico e a agenda operacional em tempo real.
+          _QrLinkCard(
+            icon: Icons.badge_outlined,
+            title: 'Página pública do médico',
+            subtitle: 'Perfil, foto e horários disponíveis — link para divulgar',
+            path: AppRoutes.agendaPublicaPath(d.id),
+            doctor: d,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _QrLinkCard(
+            icon: Icons.qr_code_2,
+            title: 'Agenda pública',
+            subtitle: 'Escaneie para abrir a agenda em tempo real',
+            path: AppRoutes.agendaMedicoPath(d.id),
+            doctor: d,
+          ),
           const SizedBox(height: AppSpacing.xl),
 
           // Ações: ativar/desativar (EM-06) e excluir (EM-08)
@@ -520,22 +552,36 @@ class MedicoDetalheScreen extends ConsumerWidget {
   }
 }
 
-/// Card com QR Code da agenda pública do médico (acessível sem login).
-class _AgendaQrCard extends StatelessWidget {
-  const _AgendaQrCard({required this.doctorId});
-  final String doctorId;
+/// Card com QR Code de um link **público** do médico (acessível sem login):
+/// a página de divulgação (`/agenda-publica/:id`) e a agenda em tempo real
+/// (`/agenda-medico/:id`).
+class _QrLinkCard extends ConsumerWidget {
+  const _QrLinkCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.path,
+    this.doctor,
+  });
 
-  /// URL absoluta da agenda pública. O app usa hash-routing (`/#/rota`), então
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Doctor? doctor;
+
+  /// Caminho da rota (ex.: `/agenda-publica/abc`).
+  final String path;
+
+  /// URL absoluta do link. O app usa hash-routing (`/#/rota`), então
   /// prefixamos a origem atual + `#` ao caminho da rota.
   String get _url {
     final base = Uri.base;
-    final origin =
-        (base.hasScheme && base.host.isNotEmpty) ? base.origin : '';
-    return '$origin/#${AppRoutes.agendaMedicoPath(doctorId)}';
+    final origin = (base.hasScheme && base.host.isNotEmpty) ? base.origin : '';
+    return '$origin/#$path';
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final url = _url;
     return AppCard(
@@ -543,15 +589,14 @@ class _AgendaQrCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.qr_code_2, color: AppColors.primary),
+              Icon(icon, color: AppColors.primary),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Agenda pública', style: theme.textTheme.titleMedium),
-                    Text('Escaneie para abrir a agenda em tempo real',
-                        style: theme.textTheme.bodySmall),
+                    Text(title, style: theme.textTheme.titleMedium),
+                    Text(subtitle, style: theme.textTheme.bodySmall),
                   ],
                 ),
               ),
@@ -574,16 +619,45 @@ class _AgendaQrCard extends StatelessWidget {
           SelectableText(url,
               textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
           const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: url));
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Link copiado.')));
-              }
-            },
-            icon: const Icon(Icons.copy, size: 18),
-            label: const Text('Copiar link'),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              if (doctor != null)
+                FilledButton.icon(
+                  onPressed: () {
+                    final tc = ref
+                            .read(publicTotemConfigProvider(doctor!.clinicId))
+                            .valueOrNull ??
+                        const TotemConfig();
+                    CompartilharAgendaDialog.show(
+                      context,
+                      doctor: doctor!,
+                      config: tc,
+                      customUrl: url,
+                    );
+                  },
+                  icon: const Icon(Icons.share_rounded, size: 18),
+                  label: const Text('Compartilhar'),
+                ),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: url));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Link copiado.')));
+                  }
+                },
+                icon: const Icon(Icons.copy, size: 18),
+                label: const Text('Copiar link'),
+              ),
+              TextButton.icon(
+                onPressed: () => context.push(path),
+                icon: const Icon(Icons.open_in_new, size: 18),
+                label: const Text('Abrir'),
+              ),
+            ],
           ),
         ],
       ),

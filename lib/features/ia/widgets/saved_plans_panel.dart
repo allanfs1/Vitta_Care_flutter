@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../agent/agent_plans_service.dart';
+import 'ai_rich_content.dart';
 
 /// Painel lateral que lista os planos multi-agente salvos e os relatórios de
 /// IA da clínica ativa. Segue o tema escuro do dashboard de IA.
@@ -212,13 +213,11 @@ class _PlanCardState extends State<_PlanCard> {
                 const SizedBox(height: AppSpacing.sm),
                 Divider(color: AppColors.borderOf(context), height: 1),
                 const SizedBox(height: AppSpacing.sm),
-                Text(
-                  sintese,
-                  style: TextStyle(
-                    color: AppColors.textSecondaryOf(context),
-                    fontSize: 11,
-                    height: 1.5,
-                  ),
+                // Renderiza markdown de verdade (tabelas, negrito, listas) — o
+                // mesmo renderer do chat/agentes; antes era texto cru com `|---|`.
+                AiRichContent(
+                  content: sintese,
+                  textColor: AppColors.textSecondaryOf(context),
                 ),
               ],
             ],
@@ -299,13 +298,11 @@ class _ReportCardState extends State<_ReportCard> {
                 const SizedBox(height: AppSpacing.sm),
                 Divider(color: AppColors.borderOf(context), height: 1),
                 const SizedBox(height: AppSpacing.sm),
-                Text(
-                  markdown,
-                  style: TextStyle(
-                    color: AppColors.textSecondaryOf(context),
-                    fontSize: 11,
-                    height: 1.5,
-                  ),
+                // Renderiza markdown de verdade (tabelas, negrito, listas) — o
+                // mesmo renderer do chat/agentes; antes era texto cru com `|---|`.
+                AiRichContent(
+                  content: markdown,
+                  textColor: AppColors.textSecondaryOf(context),
                 ),
               ],
             ],

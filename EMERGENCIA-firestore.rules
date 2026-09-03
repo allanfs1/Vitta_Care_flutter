@@ -1,0 +1,144 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  REGRAS DE EMERGÊNCIA — COLE ISTO NO CONSOLE AGORA
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//  Console → Firestore Database → aba "Regras" → apagar tudo → colar → Publicar
+//  https://console.firebase.google.com/project/agendaclinica-457713/firestore/rules
+//
+//  ─── O QUE ISTO CONSERTA ────────────────────────────────────────────────
+//
+//  Hoje, sem nenhum login, qualquer pessoa na internet lê:
+//     tb_agendamentos  → nomePaciente, cpf, telefonePaciente, emailPaciente,
+//                        motivoConsulta, dataConsulta, nomeMedico
+//     users            → usuários do sistema
+//     tb_clinica       → dados da clínica
+//
+//  Verificado por leitura anônima real contra o projeto em 2026-08-26.
+//  (tb_pacientes e tb_cerebro_notas já estavam protegidos.)
+//
+//  Estas regras exigem login para TUDO. Isso fecha o vazamento, que é acesso
+//  ANÔNIMO, e mantém o app funcionando para quem já está autenticado.
+//
+//  ─── O QUE VAI PARAR DE FUNCIONAR ───────────────────────────────────────
+//
+//  As três telas públicas do app (que hoje funcionam sem login):
+//     /totem                → autoatendimento
+//     /recepcao-monitor     → painel de senha
+//     /agenda-medico/:id    → agenda do médico via QR Code
+//
+//  Isso é intencional e temporário. Veja a nota no fim do arquivo sobre a
+//  agenda pública — ela é a causa do vazamento e precisa de correção de
+//  design, não só de regra.
+//
+//  Prefira o app com três telas quebradas por algumas horas a CPF de paciente
+//  aberto na internet por mais um minuto.
+//
+// ═══════════════════════════════════════════════════════════════════════════
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Padrão: nada é acessível sem login.
+    //
+    // Esta é uma regra de contenção, não o destino final. Ela impede o
+    // anônimo, mas ainda permite que um usuário logado de uma clínica leia
+    // dados de outra. Isso é MUITO menos grave que o estado atual, e o
+    // isolamento por clínica entra no arquivo definitivo, coleção por
+    // coleção.
+    // ─────────────────────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SE VOCÊ QUISER FECHAR TUDO, INCLUSIVE PARA USUÁRIOS LOGADOS
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//  Use este bloco SÓ se suspeitar de acesso indevido por uma conta real (e
+//  não apenas anônimo). Ele para a clínica inteira — ninguém lê nem grava
+//  nada, nem o app, nem as Cloud Functions que usam SDK cliente.
+//
+//  As Cloud Functions com Admin SDK continuam funcionando: o Admin SDK
+//  ignora as regras por definição.
+//
+//  rules_version = '2';
+//  service cloud.firestore {
+//    match /databases/{database}/documents {
+//      match /{document=**} {
+//        allow read, write: if false;
+//      }
+//    }
+//  }
+//
+// ═══════════════════════════════════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DEPOIS DE PUBLICAR — FAÇA NESTA ORDEM
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//  1. CONFIRME QUE FECHOU
+//     Abra uma aba anônima e acesse (a chave abaixo é pública por design,
+//     ela sozinha não é o problema):
+//
+//     https://firestore.googleapis.com/v1/projects/agendaclinica-457713/databases/(default)/documents/tb_agendamentos?pageSize=1&key=SUA_CHAVE_WEB
+//
+//     Antes desta regra: HTTP 200 com dados de paciente.
+//     Depois: HTTP 403 PERMISSION_DENIED. É esse 403 que você quer ver.
+//
+//  2. VERIFIQUE SE ALGUÉM JÁ LEU
+//     Console → Firestore → Uso, e Google Cloud Logging.
+//     Procure volume anômalo de leitura em tb_agendamentos.
+//
+//     Se houve acesso indevido, a LGPD (Art. 48) exige comunicação à ANPD e
+//     aos titulares em prazo razoável. Não é opcional, e o relógio começa
+//     quando você toma conhecimento — que foi agora.
+//
+//  3. NÃO REABRA `tb_agendamentos` PARA LEITURA PÚBLICA
+//     Leia a nota abaixo primeiro.
+//
+// ═══════════════════════════════════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  A CAUSA RAIZ — A AGENDA PÚBLICA DO MÉDICO
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//  `tb_agendamentos` quase certamente foi aberto de propósito, para fazer
+//  funcionar a agenda pública do médico (PM-09), que é acessível por QR Code
+//  sem login:
+//
+//      lib/core/services/app_providers.dart:238  doctorAgendaProvider
+//      → appointmentService.watchForDoctor(doctorId)
+//      → tb_agendamentos filtrado por idMedico
+//
+//  O problema é que o documento inteiro vai junto. Quem abre o QR Code do
+//  médico não vê só os horários ocupados — vê nomePaciente, cpf,
+//  telefonePaciente, emailPaciente e motivoConsulta de cada paciente dele.
+//
+//  Regra de segurança nenhuma conserta isso, porque o Firestore não filtra
+//  campos: ou o documento é legível, ou não é. A correção é de design.
+//
+//  As duas saídas, em ordem de preferência:
+//
+//  (a) COLEÇÃO ESPELHO SEM DADO PESSOAL — recomendado
+//      Uma Cloud Function mantém `tb_agenda_publica` com apenas o necessário:
+//      { idMedico, dataConsulta, duracao, ocupado: true }
+//      Sem nome, sem CPF, sem motivo. Essa coleção pode ser lida sem login
+//      sem expor ninguém, e a agenda pública passa a ler dela.
+//
+//  (b) EXIGIR LOGIN NA AGENDA DO MÉDICO
+//      Mais simples, mas mata o caso de uso do QR Code — que é justamente
+//      o paciente conferir o horário sem precisar de conta.
+//
+//  Enquanto (a) não existe, a agenda pública fica fora do ar. É o preço de
+//  ter descoberto isto, e é o preço certo a pagar.
+//
+// ═══════════════════════════════════════════════════════════════════════════

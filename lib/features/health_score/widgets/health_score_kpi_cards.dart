@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/textos.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
@@ -25,7 +27,7 @@ class HealthScoreKpiCards extends StatelessWidget {
       children: [
         Expanded(
           child: _KpiTile(
-            title: 'ELITE (DIAMANTE)',
+            title: context.txt.t('health.eliteDiamante'),
             value: elite,
             icon: Icons.auto_awesome,
             iconColor: const Color(0xFF4F46E5),
@@ -36,7 +38,7 @@ class HealthScoreKpiCards extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _KpiTile(
-            title: 'ASSÍDUOS (OURO)',
+            title: context.txt.t('health.assiduosOuro'),
             value: assiduos,
             icon: Icons.emoji_events,
             iconColor: const Color(0xFFD97706),
@@ -47,7 +49,7 @@ class HealthScoreKpiCards extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _KpiTile(
-            title: 'ATENÇÃO (PRATA)',
+            title: context.txt.t('health.atencaoPrata'),
             value: atencao,
             icon: Icons.verified_user_outlined,
             iconColor: const Color(0xFF6B7280),
@@ -58,7 +60,7 @@ class HealthScoreKpiCards extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _KpiTile(
-            title: 'RISCO (BRONZE)',
+            title: context.txt.t('health.riscoBronze'),
             value: risco,
             icon: Icons.error_outline,
             iconColor: const Color(0xFFDC2626),

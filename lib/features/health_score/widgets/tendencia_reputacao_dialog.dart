@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/textos.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 
@@ -111,13 +113,13 @@ class TendenciaReputacaoDialog extends StatelessWidget {
                     children: [
                       _FilterChip(
                         icon: Icons.calendar_today_outlined,
-                        label: 'PERÍODO',
+                        label: context.txt.t('health.periodo'),
                         value: 'ÚLTIMOS 6 MESES',
                       ),
                       const SizedBox(width: AppSpacing.xl),
                       _FilterChip(
                         icon: Icons.medical_services_outlined,
-                        label: 'CORPO CLÍNICO',
+                        label: context.txt.t('health.corpoClinico'),
                         value: 'TODOS OS MÉDICOS',
                       ),
                       const Spacer(),
@@ -136,10 +138,10 @@ class TendenciaReputacaoDialog extends StatelessWidget {
                   // Mini KPIs
                   Row(
                     children: [
-                      _MiniKpi(title: 'MÉDIA ATUAL', value: '99.7'),
+                      _MiniKpi(title: context.txt.t('health.mediaAtual'), value: '99.7'),
                       const SizedBox(width: AppSpacing.lg),
                       _MiniKpi(
-                        title: 'VARIAÇÃO (MÊS)',
+                        title: context.txt.t('health.variacaoMes'),
                         value: '-0.3',
                         valueColor: AppColors.pinkAccent,
                         trailing: Icon(

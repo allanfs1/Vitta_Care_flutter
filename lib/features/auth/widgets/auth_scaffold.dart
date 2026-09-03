@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -163,7 +165,7 @@ class _Logo extends ConsumerWidget {
           children: [
             Icon(Icons.favorite, color: color, size: height * 0.7),
             const SizedBox(width: 8),
-            Text('Vitta',
+            Text(context.txt.t('auth.vitta'),
                 style: Theme.of(context)
                     .textTheme
                     .headlineSmall

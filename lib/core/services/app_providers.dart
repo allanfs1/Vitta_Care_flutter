@@ -720,6 +720,11 @@ class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
         else
           a,
     ];
+    // Persiste a remarcação (novo horário + status) em `tb_agendamentos` — sem
+    // isso a mudança some ao recarregar e a recepção nunca a vê. A troca de
+    // médico/especialidade ainda só vale localmente (limitação de
+    // `AppointmentService.reschedule`).
+    unawaited(_persistReschedule(id, start));
   }
 }
 

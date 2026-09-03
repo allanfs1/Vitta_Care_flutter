@@ -109,8 +109,10 @@ class VigiaService {
             recusadas: _resumoRecusadas(vigentes),
           )}',
           toolSpecs: specs,
-          callTool: (nome, args) async =>
-              (await servidor.callTool(nome, args)).text,
+          callTool: (nome, args) async {
+            final r = await servidor.callTool(nome, args);
+            return (text: r.text, isError: r.isError);
+          },
           clinicaId: clinicaId,
         )
         .timeout(const Duration(minutes: 5));

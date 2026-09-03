@@ -167,6 +167,40 @@ class ModuleRegistry {
 
     // ── Analytics / atendimento (P2) ────────────────────────────
     AppModule(
+      id: 'monte_carlo',
+      title: 'Simulador (Monte Carlo)',
+      code: 'MC(§1)',
+      icon: Icons.casino_outlined,
+      priority: ModulePriority.p2,
+      status: ModuleStatus.implemented,
+      route: AppRoutes.monteCarlo,
+      dependsOn: ['agendamentos', 'equipe_medica', 'overbooking'],
+      readsCollections: ['tb_agendamentos', 'tb_medicos'],
+      description:
+          'Distribuição de faltas do dia e decisão de overbooking por slot '
+          '(médico × hora), com dependência entre faltas do mesmo dia. '
+          'Puramente derivado da agenda — não escreve em nenhuma coleção.',
+    ),
+    AppModule(
+      id: 'projecao_12m',
+      title: 'Projeção 12 meses',
+      code: 'Proj(12m)',
+      icon: Icons.timeline_outlined,
+      priority: ModulePriority.p3,
+      status: ModuleStatus.partial,
+      route: AppRoutes.projecao12m,
+      dependsOn: ['agendamentos', 'monte_carlo'],
+      readsCollections: ['tb_agendamentos'],
+      description:
+          'Cenário de continuidade x cenário com intervenção em 12 meses: '
+          'cadeia de Markov, simulação com três camadas de incerteza — as duas '
+          'epistêmicas persistem no horizonte —, restrição de capacidade e '
+          'receita decomposta em defensável e antecipação. Traz a aba de '
+          'governança: piso de intervenção como invariante, usos proibidos do '
+          'escore bloqueados em código, poder do piloto e partida a frio. '
+          'Parâmetros de impacto são hipótese até o piloto calibrar.',
+    ),
+    AppModule(
       id: 'absenteismo',
       title: 'Absenteísmo',
       code: 'Absent.(1)',
@@ -276,9 +310,29 @@ class ModuleRegistry {
       status: ModuleStatus.implemented,
       route: AppRoutes.ia,
       dependsOn: ['criar_agendamento'],
-      ownedCollections: ['tb_relatorio_ia', 'chats', 'chat_history'],
+      ownedCollections: [
+        'tb_relatorio_ia',
+        'tb_ia_chats',
+        'tb_agent_plans',
+      ],
       readsCollections: ['tb_agendamentos', 'tb_faltas_data', 'dashboard_risco'],
       description: 'Agendamento inteligente B2B, análises e relatórios por IA (Azure).',
+    ),
+    AppModule(
+      id: 'evidencias',
+      title: 'Evidências (PubMed)',
+      code: 'Evid(11)',
+      icon: Icons.menu_book_outlined,
+      priority: ModulePriority.p3,
+      status: ModuleStatus.implemented,
+      route: AppRoutes.evidencias,
+      dependsOn: ['ia'],
+      // O cache é compartilhado entre clínicas de propósito: literatura é
+      // pública e o mesmo PMID vale para todo mundo. Ver EVIDENCIAS.md §4.
+      ownedCollections: ['tb_pubmed_cache', 'tb_pubmed_rate'],
+      description:
+          'Pesquisa de literatura científica no PubMed/NCBI com citação '
+          'verificável (PMID/DOI), via Cloud Function autenticada.',
     ),
     AppModule(
       id: 'cerebro',

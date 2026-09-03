@@ -96,6 +96,63 @@
       "density": "SPARSE_ALL"
     },
     {
+      "collectionGroup": "dashboard_risco",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "foiIgnorado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "email_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tipo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "email_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sentAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
       "collectionGroup": "email_queue",
       "queryScope": "COLLECTION",
       "fields": [
@@ -119,7 +176,45 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "email_queue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "historico_agenda_clinica",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "clinicaId",
           "order": "ASCENDING"
         },
         {
@@ -176,7 +271,148 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "notices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "clinicId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "queue_realoc",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idClinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "queue_realoc",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idClinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "processado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "queue_realoc",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idClinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "queue_realoc",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "queue_realoc",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "processado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "queue_realoc",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
           "order": "ASCENDING"
         },
         {
@@ -259,6 +495,44 @@
           "fieldPath": "clinicaId",
           "order": "ASCENDING"
         },
+        {
+          "fieldPath": "outcome",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "riskScore",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_absenteismo_scores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "outcome",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_absenteismo_scores",
+      "queryScope": "COLLECTION",
+      "fields": [
         {
           "fieldPath": "outcome",
           "order": "ASCENDING"
@@ -364,11 +638,15 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "idclinica",
+          "fieldPath": "idMedico",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "modalidade",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
           "order": "ASCENDING"
         },
         {
@@ -391,15 +669,11 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "idMedico",
+          "fieldPath": "idclinica",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "modalidade",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
           "order": "ASCENDING"
         },
         {
@@ -563,6 +837,193 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "idClinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idClinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idMedico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idMedico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idMedico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "nomePaciente",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idMedico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idMedico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "nomePaciente",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idPaciente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idPaciente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "id_clinica",
           "order": "ASCENDING"
         },
@@ -586,6 +1047,25 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "cpf",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "createdAt",
           "order": "DESCENDING"
         },
@@ -625,52 +1105,29 @@
         },
         {
           "fieldPath": "dataConsulta",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
           "order": "DESCENDING"
         },
         {
@@ -712,6 +1169,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "dataConsulta",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "idMedico",
           "order": "ASCENDING"
         },
@@ -722,6 +1202,56 @@
         {
           "fieldPath": "__name__",
           "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "idMedico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_agendamentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "idMedico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataConsulta",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
         }
       ],
       "density": "SPARSE_ALL"
@@ -791,193 +1321,6 @@
         {
           "fieldPath": "__name__",
           "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idClinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idClinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idMedico",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idMedico",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idMedico",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "nomePaciente",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idMedico",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idMedico",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "nomePaciente",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idPaciente",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idPaciente",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "dataConsulta",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
         }
       ],
       "density": "SPARSE_ALL"
@@ -1250,6 +1593,25 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "action",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_confirmationHistory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "appointmentId",
           "order": "ASCENDING"
         },
@@ -1441,6 +1803,44 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "idMedico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_faltas_data",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_faltas_data",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "idclinica",
           "order": "ASCENDING"
         },
@@ -1567,6 +1967,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "idMedico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_faltas_data",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "probabilidade_falta",
           "order": "ASCENDING"
         },
@@ -1609,6 +2032,52 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "processado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_faltas_data",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "risco_falta",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_faltas_data",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "valor_predicao",
           "order": "ASCENDING"
         },
@@ -1633,6 +2102,44 @@
         },
         {
           "fieldPath": "data_consulta",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_faltas_data",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "processado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_faltas_data",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "risco_falta",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
           "order": "DESCENDING"
         },
         {
@@ -1708,6 +2215,25 @@
       "density": "SPARSE_ALL"
     },
     {
+      "collectionGroup": "tb_lembrete_controle",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ultimoStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
       "collectionGroup": "tb_medicos",
       "queryScope": "COLLECTION",
       "fields": [
@@ -1788,6 +2314,25 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_medicos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "nomeCompleto",
           "order": "ASCENDING"
         },
@@ -1812,6 +2357,63 @@
         },
         {
           "fieldPath": "idclinica",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_overbooking_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "decisao",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_overbooking_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "decisao",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_overbooking_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "medicoId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
           "order": "DESCENDING"
         },
         {
@@ -1929,6 +2531,67 @@
       "density": "SPARSE_ALL"
     },
     {
+      "collectionGroup": "tb_relatorio_ia",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tipoRelatorio",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_relatorio_ia",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tipoRelatorio",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "periodoInicio",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tb_relatorio_ia",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tipoRelatorio",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "periodoInicio",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
       "collectionGroup": "tb_tarefas",
       "queryScope": "COLLECTION",
       "fields": [
@@ -2013,204 +2676,23 @@
       "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "created_time",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "roles",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "roles",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "created_time",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "roles",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "created_time",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "roles",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "created_time",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "roles",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "created_time",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tb_agendamentos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "cpf",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "tb_medicos",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "nome_lower",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "tickets",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "idclinica",
+          "fieldPath": "assignedTo",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "status",
-          "order": "ASCENDING"
+          "fieldPath": "timestamps.created",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
         }
-      ]
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "tickets",
@@ -2223,25 +2705,16 @@
         {
           "fieldPath": "prioridade",
           "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "tb_overbooking_events",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idclinica",
-          "order": "ASCENDING"
         },
         {
-          "fieldPath": "decisao",
+          "fieldPath": "__name__",
           "order": "ASCENDING"
         }
-      ]
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "queue_realoc",
+      "collectionGroup": "tickets",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -2251,11 +2724,73 @@
         {
           "fieldPath": "status",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
         }
-      ]
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "tb_relatorio_ia",
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "priority",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamps.created",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "queueId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamps.created",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamps.created",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -2263,13 +2798,18 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "tipoRelatorio",
-          "order": "ASCENDING"
+          "fieldPath": "created_time",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
         }
-      ]
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "email_logs",
+      "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -2277,13 +2817,60 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "tipo",
+          "fieldPath": "nome_lower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
           "order": "ASCENDING"
         }
-      ]
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "email_queue",
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "roles",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "roles",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "created_time",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -2293,8 +2880,124 @@
         {
           "fieldPath": "status",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
         }
-      ]
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "roles",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "created_time",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "roles",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "display_name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "roles",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_time",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "roles",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "display_name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "roles",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "idclinica",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_time",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     }
   ],
   "fieldOverrides": [

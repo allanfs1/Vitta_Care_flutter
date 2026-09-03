@@ -2,6 +2,12 @@
 
 Esta é a lista de todas as Cloud Functions configuradas no projeto.
 
+> **Para publicar**, veja [`CLOUD_FUNCTION.md`](CLOUD_FUNCTION.md) — procedimento,
+> secrets, verificação e rollback. Atenção especial à regra de deploy
+> **direcionado**: `firebase deploy --only functions` (sem nome) apaga as
+> funções que não estiverem no codebase publicado, e a maior parte desta
+> lista vem de outros repositórios.
+
 | Function Name | Version | Trigger | Location | Memory | Runtime |
 |---|---|---|---|---|---|
 | checkFaltasPacientes | v2 | https | southamerica-east1 | --- | nodejs22 |

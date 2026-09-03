@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/i18n/idioma.dart';
+import 'core/i18n/textos.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/color_blind.dart';
 import 'features/assistente/assistant_scope.dart';
@@ -22,16 +24,10 @@ class VittaApp extends ConsumerWidget {
     final scale =
         settings.largerTouchTargets ? settings.fontScale.clamp(1.3, 1.6) : settings.fontScale;
 
-    final supportedLocales = const [
-      Locale('pt', 'BR'),
-      Locale('en', 'US'),
-      Locale('es', 'ES'),
-    ];
-    final locale = switch (settings.locale) {
-      'en_US' => const Locale('en', 'US'),
-      'es_ES' => const Locale('es', 'ES'),
-      _ => const Locale('pt', 'BR'),
-    };
+    // A lista e o mapeamento vivem em `Idioma`: acrescentar um idioma passa a
+    // ser um item de enum mais um mapa de textos, e não uma edição em três
+    // lugares que é fácil deixar pela metade.
+    final idioma = Idioma.daChave(settings.locale);
 
     return MaterialApp.router(
       title: 'Vitta',
@@ -40,9 +36,14 @@ class VittaApp extends ConsumerWidget {
       darkTheme: AppTheme.fromSettings(settings, Brightness.dark),
       themeMode: settings.themeMode,
       routerConfig: router,
-      locale: locale,
-      supportedLocales: supportedLocales,
+      locale: idioma.locale,
+      supportedLocales: Idioma.values.map((i) => i.locale),
       localizationsDelegates: const [
+        // Sem este primeiro delegate, trocar o idioma só mudava os rótulos dos
+        // widgets do Material (datas, "OK"/"Cancelar" dos diálogos) — o texto
+        // do próprio app continuava em português. É ele que faz a preferência
+        // de idioma valer para o produto.
+        Textos.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

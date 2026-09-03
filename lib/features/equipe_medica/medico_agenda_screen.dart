@@ -13,6 +13,9 @@ import '../../core/widgets/app_avatar.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/async_states.dart';
 import '../../core/widgets/status_badge.dart';
+import '../agenda_publica/widgets/compartilhar_agenda_dialog.dart';
+import '../totem/models/totem_config.dart';
+import '../totem/providers/totem_config_provider.dart';
 
 /// Agenda do médico em **tempo real** (PM-09), pública (acessível sem login via
 /// QR Code). Reproduz a lógica de slots do Totem: para cada horário do dia conta
@@ -83,6 +86,24 @@ class _MedicoAgendaScreenState extends ConsumerState<MedicoAgendaScreen> {
             ),
           ],
         ),
+        actions: [
+          if (doctor != null)
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: 'Compartilhar página da agenda',
+              onPressed: () {
+                final tc = ref
+                        .read(publicTotemConfigProvider(doctor.clinicId))
+                        .valueOrNull ??
+                    const TotemConfig();
+                CompartilharAgendaDialog.show(
+                  context,
+                  doctor: doctor,
+                  config: tc,
+                );
+              },
+            ),
+        ],
       ),
       body: apptsAsync.when(
         loading: () => const LoadingView(message: 'Carregando agenda…'),

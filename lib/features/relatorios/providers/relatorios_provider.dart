@@ -1,3 +1,4 @@
+import '../../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/services/app_providers.dart';

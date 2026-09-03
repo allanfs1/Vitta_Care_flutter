@@ -1,6 +1,8 @@
 import 'dart:ui' show lerpDouble;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -70,8 +72,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SectionHeader(
-                title: 'Esta semana',
-                actionLabel: 'Ver tudo',
+                title: context.txt.t('home.estaSemana'),
+                actionLabel: context.txt.t('home.verTudo'),
                 onAction: () => context.go(AppRoutes.agendamentos),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -82,7 +84,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'kpis' => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Indicadores', style: Theme.of(context).textTheme.titleLarge),
+              Text(context.txt.t('home.indicadores'), style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: AppSpacing.md),
               AssistantTarget(
                 anchorId: HelpAnchors.homeKpis,
@@ -104,8 +106,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SectionHeader(
-                title: 'Próximos agendamentos',
-                actionLabel: 'Ver todos',
+                title: context.txt.t('home.proximosAgendamentos'),
+                actionLabel: context.txt.t('home.verTodos'),
                 onAction: () => context.go(AppRoutes.agendamentos),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -321,7 +323,7 @@ class _EditLayoutButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            tooltip: 'Restaurar ordem padrão',
+            tooltip: context.txt.t('home.restaurarOrdemPadrao'),
             onPressed: onReset,
             icon: const Icon(Icons.restart_alt, size: 20),
           ),
@@ -340,7 +342,7 @@ class _EditLayoutButton extends StatelessWidget {
       );
     }
     return IconButton(
-      tooltip: 'Personalizar layout',
+      tooltip: context.txt.t('home.personalizarLayout'),
       onPressed: onToggle,
       icon: const Icon(Icons.dashboard_customize_outlined, size: 22),
     );
@@ -450,7 +452,7 @@ class _ChartsSection extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text('Taxa global de absenteísmo',
+                child: Text(context.txt.t('home.taxaGlobalDeAbsenteismo'),
                     style: Theme.of(context).textTheme.titleLarge),
               ),
               const AiInsightButton(
@@ -510,7 +512,7 @@ class _ReallocationCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text('Eficiência de realocação',
+                child: Text(context.txt.t('home.eficienciaDeRealocacao'),
                     style: theme.textTheme.titleLarge),
               ),
               const AiInsightButton(
@@ -521,7 +523,7 @@ class _ReallocationCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 2),
-          Text('Taxa de sucesso ao preencher horários cancelados',
+          Text(context.txt.t('home.taxaDeSucessoAoPreencherHorariosCancelados'),
               style: theme.textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.lg),
           Row(
@@ -538,7 +540,7 @@ class _ReallocationCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Atual', style: theme.textTheme.bodyMedium),
+              Text(context.txt.t('home.atual'), style: theme.textTheme.bodyMedium),
               Text('72%',
                   style: theme.textTheme.headlineSmall
                       ?.copyWith(color: AppColors.primary)),
@@ -741,9 +743,9 @@ class _FaturamentoCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('EVOLUÇÃO DO FATURAMENTO',
+                    Text(context.txt.t('home.evolucaoDoFaturamento'),
                         style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
-                    Text('RECEITA CONFIRMADA NOS ÚLTIMOS 6 MESES',
+                    Text(context.txt.t('home.receitaConfirmadaNosUltimos6Meses'),
                         style: theme.textTheme.labelMedium?.copyWith(
                             color: AppColors.textTertiary,
                             fontWeight: FontWeight.w700,

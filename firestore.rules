@@ -1,0 +1,65 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  REGRAS DO FIRESTORE — versionadas, revisáveis em PR
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//  Antes deste arquivo, as regras só existiam no Console (Firestore Database →
+//  Regras) e nenhuma mudança passava por revisão nem tinha histórico — ver
+//  `.specify/ATENCAO.md` (🔴 Crítico, "firestore.rules não versionado").
+//
+//  Esta é a mesma postura de contenção adotada em `EMERGENCIA-firestore.rules`
+//  (raiz do repo) depois do vazamento verificado em 2026-08-26: leitura
+//  anônima de `tb_agendamentos` expunha nome, CPF, telefone, e-mail e motivo
+//  de consulta de cada paciente. Consulte aquele arquivo para o histórico
+//  completo do incidente.
+//
+//  ⚠️ **Antes de publicar (`firebase deploy --only firestore:rules`)**:
+//  reconcilie este arquivo com o que está hoje no Console. Ele foi escrito a
+//  partir do que se sabe estar em vigor (auth obrigatória para tudo), não
+//  lido de lá — se o Console tiver alguma exceção que este arquivo não
+//  reproduz, a primeira publicação a fecha.
+//
+// ═══════════════════════════════════════════════════════════════════════════
+//  POR QUE NENHUMA COLEÇÃO PRECISA DE EXCEÇÃO PARA AS TELAS PÚBLICAS
+// ═══════════════════════════════════════════════════════════════════════════
+//
+//  Três rotas do app funcionam sem login: `/totem`, `/recepcao-monitor` e
+//  `/agenda-medico/:id` continuam dependendo de o usuário estar numa sessão já
+//  autenticada no dispositivo (ou de dados em memória, no caso do monitor) —
+//  nenhuma delas lê Firestore como anônimo puro hoje.
+//
+//  A exceção é `/agenda-publica/:id` (perfil do médico + horários + pedido de
+//  consulta, compartilhado por QR Code). Em vez de abrir uma exceção de
+//  leitura/escrita anônima em `tb_agendamentos` — o que reabriria exatamente o
+//  vazamento de 2026-08-26 — ela fala com duas Cloud Functions que usam o
+//  Admin SDK (ignora estas regras de propósito) e devolvem/persistem só o
+//  necessário:
+//
+//      functions/publicAgendaProxy.js       (GET)  → perfil do médico +
+//        config de horário + horários ocupados (sem nome/CPF/telefone/motivo)
+//      functions/publicAgendaSolicitar.js   (POST) → cria a consulta como
+//        `pre-agendado`, com toda validação refeita no servidor
+//
+//  Por isso `tb_agendamentos` pode ficar **fechado** para quem não está
+//  logado, leitura e escrita, sem quebrar essa tela.
+//
+// ═══════════════════════════════════════════════════════════════════════════
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Padrão: nada é acessível sem login.
+    //
+    // Isto é uma trava de contenção, não o destino final: impede o anônimo,
+    // mas ainda permite que um usuário logado de uma clínica leia dados de
+    // outra. O isolamento por clínica (coleção por coleção) é trabalho
+    // futuro — ver `.specify/ATENCAO.md`.
+    // ─────────────────────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+  }
+}

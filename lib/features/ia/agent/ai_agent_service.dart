@@ -45,8 +45,16 @@ class AgentError extends AgentEvent {
   final String message;
 }
 
-/// Executor de uma ferramenta MCP: retorna o texto do resultado.
-typedef ToolExecutor = Future<String> Function(
+/// Saída de uma ferramenta: o texto e **se falhou**.
+///
+/// O `isError` vem de `McpResult.isError`, que a tool já produz. Antes o loop
+/// deduzia falha por `result.startsWith('Erro:')` — sniffing de string que erra
+/// nos dois sentidos: uma tool que devolve um log contendo "Erro:" era marcada
+/// como falha, e uma que falha com outra redação passava por sucesso.
+typedef ToolOutcome = ({String text, bool isError});
+
+/// Executor de uma ferramenta MCP.
+typedef ToolExecutor = Future<ToolOutcome> Function(
     String name, Map<String, dynamic> args);
 
 /// Cliente do agente de IA — endpoint OpenAI-compatível resolvido por
@@ -69,6 +77,8 @@ class AiAgentService {
     this.model = 'DeepSeek-V4-Flash',
     this.maxRounds = 6,
     this.maxRetries = 3,
+    this.prazoTotal = const Duration(minutes: 3),
+    this.maxCharsPorResultado = 8000,
     http.Client? client,
   })  : _urls = [endpoint ?? AiConfig.endpoint],
         _apiKey = apiKey ?? AiConfig.clientKey,
@@ -81,6 +91,22 @@ class AiAgentService {
 
   /// Tentativas extras em respostas 429/503 antes de desistir.
   final int maxRetries;
+
+  /// Teto de tempo da rodada inteira.
+  ///
+  /// Cada requisição tem 90 s de timeout e pode ser retentada; sem um teto
+  /// global, `maxRounds` × `maxRetries` × 90 s chega a quase meia hora de
+  /// espera com a interface travada em "pensando". O prazo é verificado entre
+  /// rodadas: a rodada em curso termina, e a próxima não começa.
+  final Duration prazoTotal;
+
+  /// Teto de caracteres do resultado de **cada** ferramenta.
+  ///
+  /// O resultado entra no histórico e é reenviado em toda rodada seguinte, então
+  /// um retorno grande custa uma vez por rodada restante. Trunca com marca
+  /// explícita para o modelo saber que há mais dado — e poder pedir com filtro.
+  final int maxCharsPorResultado;
+
   final http.Client _client;
 
   /// Executa uma rodada completa do agente para a [history] (que já inclui a
@@ -99,8 +125,16 @@ class AiAgentService {
           .map((m) => m.toApi()),
     ];
 
+    final relogio = Stopwatch()..start();
+
     try {
       for (var round = 0; round < maxRounds; round++) {
+        if (relogio.elapsed > prazoTotal) {
+          yield AgentError(
+              'Tempo esgotado após ${relogio.elapsed.inSeconds}s e $round '
+              'rodada(s) de ferramentas. Tente uma pergunta mais específica.');
+          return;
+        }
         final resp = await _complete(messages, tools);
         final choice = (resp['choices'] as List?)?.firstOrNull;
         final msg = (choice as Map?)?['message'] as Map<String, dynamic>?;
@@ -150,8 +184,9 @@ class AiAgentService {
           String result;
           var okFlag = true;
           try {
-            result = await callTool(name, args);
-            okFlag = !result.startsWith('Erro:');
+            final saida = await callTool(name, args);
+            result = saida.text;
+            okFlag = !saida.isError;
           } catch (e) {
             result = 'Erro: $e';
             okFlag = false;
@@ -162,7 +197,7 @@ class AiAgentService {
           messages.add({
             'role': 'tool',
             'tool_call_id': id,
-            'content': result,
+            'content': _truncar(result),
           });
         }
       }
@@ -273,6 +308,18 @@ Regras: cada "prompt" deve ser claro e independente das outras tarefas; use
   /// Tenta os endpoints de [_urls] em ordem: falhas de rede/CORS ("Failed to
   /// fetch") só são propagadas quando **todos** falham. Um status HTTP de erro
   /// (não-200) é definitivo e não dispara fallback — o servidor respondeu.
+  /// Corta o resultado de uma ferramenta, avisando o modelo do corte.
+  ///
+  /// A marca importa: sem ela o modelo conclui sobre uma lista que acha
+  /// completa. Com ela, sabe que precisa filtrar.
+  String _truncar(String texto) {
+    if (texto.length <= maxCharsPorResultado) return texto;
+    final corte = texto.substring(0, maxCharsPorResultado);
+    final sobra = texto.length - maxCharsPorResultado;
+    return '$corte\n\n[resultado truncado: $sobra caracteres a mais. '
+        'Refaça a chamada com filtro mais estreito ou "limite" menor.]';
+  }
+
   Future<Map<String, dynamic>> _complete(
     List<Map<String, dynamic>> messages,
     List<Map<String, dynamic>> tools,
@@ -405,16 +452,38 @@ Diretrizes:
 ''';
   }
 
+  /// Traduz a falha em algo que aponte a causa certa.
+  ///
+  /// A versão anterior dizia "credencial recusada — verifique a chave do Azure"
+  /// em todo 401. Isso mandava para o lugar errado no caso mais comum: build
+  /// **sem** `AI_PROXY_URL` nem `AZURE_AI_KEY`. Aí não há chave nenhuma para
+  /// verificar — a requisição sai sem header e o Azure recusa, corretamente.
+  /// Quem lia a mensagem ia auditar uma chave que não existe.
   String _friendlyError(Object e) {
     if (e is HttpException) {
       if (e.statusCode == 401 || e.statusCode == 403) {
+        if (!AiConfig.isConfigured) {
+          return 'A IA não está configurada nesta build. Rode com '
+              '--dart-define=AI_PROXY_URL=<url do chatProxy> (recomendado, a '
+              'credencial fica no servidor) ou --dart-define=AZURE_AI_KEY=<chave> '
+              'para acesso direto em desenvolvimento.';
+        }
         return 'Credencial da IA recusada (HTTP ${e.statusCode}). '
-            'Verifique a chave do Azure AI Foundry.';
+            '${AiConfig.usesProxy ? "O proxy respondeu, mas a credencial dele foi rejeitada pelo provedor." : "Verifique a chave do Azure AI Foundry."}';
       }
       if (e.statusCode == 429) {
         return 'Limite de requisições da IA atingido (HTTP 429). A cota do '
             'Azure DeepSeek está saturada — aguarde alguns segundos e tente '
             'novamente, ou reduza o número de tarefas em paralelo.';
+      }
+      // 5xx vindo do proxy quase nunca é a IA: é a própria Cloud Function
+      // caindo. Já aconteceu com o faturamento do projeto desligado, que
+      // impede a function de ler o segredo com a chave.
+      if (e.statusCode >= 500 && AiConfig.usesProxy) {
+        return 'O serviço de IA (chatProxy) respondeu ${e.statusCode}. A falha é '
+            'da Cloud Function, não da sua pergunta — verifique os logs dela '
+            '(`firebase functions:log --only chatProxy`) e se o faturamento do '
+            'projeto está habilitado.';
       }
       return 'Erro ${e.statusCode} ao falar com a IA: ${e.body}';
     }

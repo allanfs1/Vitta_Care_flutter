@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,7 +36,7 @@ class RelatorioDetalheScreen extends ConsumerWidget {
         title: const Text('Relatório'),
         actions: [
           IconButton(
-            tooltip: 'Copiar',
+            tooltip: context.txt.t('relatorios.copiar'),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: r.toPlainText()));
               _snack(context, 'Relatório copiado.');

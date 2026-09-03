@@ -26,9 +26,12 @@ class McpResult {
       };
 }
 
-/// `ok(data)` — serializa o dado como JSON identado (2 espaços).
-McpResult ok(Object? data) =>
-    McpResult(const JsonEncoder.withIndent('  ').convert(jsonSafe(data)));
+/// `ok(data)` — serializa o dado como JSON **compacto**.
+///
+/// Sem indentação de propósito: o consumidor é um LLM, não uma pessoa. Cada
+/// espaço de recuo é token pago, e o resultado é reenviado a cada rodada
+/// seguinte do loop de ferramentas — o custo se multiplica.
+McpResult ok(Object? data) => McpResult(jsonEncode(jsonSafe(data)));
 
 /// `err(msg)` — mensagem de erro padronizada (nunca lança p/ fora do handler).
 McpResult err(String message) => McpResult('Erro: $message', isError: true);
@@ -176,12 +179,24 @@ class McpContext {
     return null;
   }
 
-  /// Resolve o limite de uma listagem (int, num ou string numérica).
+  /// Teto absoluto de itens numa listagem.
+  ///
+  /// O `limite` vem dos argumentos da tool, ou seja, **do LLM**. Sem teto, um
+  /// `limite: 50000` devolve 50 mil registros que entram no contexto e são
+  /// reenviados a cada rodada seguinte do loop de ferramentas. Valor negativo
+  /// também era aceito e explodia em `Iterable.take`.
+  static const int maxLimit = 200;
+
+  /// Resolve o limite de uma listagem (int, num ou string numérica),
+  /// **sempre dentro de [1, maxLimit]**.
   int limit([Object? arg]) {
-    if (arg is int) return arg;
-    if (arg is num) return arg.toInt();
-    if (arg is String) return int.tryParse(arg) ?? defaultLimit;
-    return defaultLimit;
+    final bruto = switch (arg) {
+      final int v => v,
+      final num v => v.toInt(),
+      final String v => int.tryParse(v) ?? defaultLimit,
+      _ => defaultLimit,
+    };
+    return bruto.clamp(1, maxLimit);
   }
 
   /// Referência de documento — filtros por entidade usam refs, não strings:

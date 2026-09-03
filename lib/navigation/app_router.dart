@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../core/modules/module_registry.dart';
 import '../core/services/app_providers.dart';
 import '../features/absenteismo/absenteismo_screen.dart';
+import '../features/agenda_publica/agenda_publica_screen.dart';
 import '../features/agendamentos/agendamentos_screen.dart';
 import '../features/agendamentos/appointment_detail_screen.dart';
 import '../features/arquitetura/arquitetura_screen.dart';
 import '../features/cerebro/cerebro_screen.dart';
+import '../features/evidencias/evidencias_screen.dart';
 import '../features/auth/choose_plan_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/plano_screen.dart';
@@ -16,6 +18,8 @@ import '../features/auth/register_screen.dart';
 import '../features/configuracoes/screens/configuracoes_hub_screen.dart';
 import '../features/equipe_medica/equipe_medica_screen.dart';
 import '../features/equipe_medica/medico_agenda_screen.dart';
+import '../features/monte_carlo/monte_carlo_screen.dart';
+import '../features/projecao_12m/projecao_screen.dart';
 import '../features/overbooking/overbooking_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/ia/ia_screen.dart';
@@ -50,6 +54,7 @@ class AppRoutes {
   static const absenteismo = '/absenteismo';
   static const ia = '/ia';
   static const cerebro = '/cerebro';
+  static const evidencias = '/evidencias';
   static const perfilUsuario = '/perfil-usuario';
   static const perfilClinica = '/perfil-clinica';
   static const whatsapp = '/whatsapp';
@@ -58,6 +63,8 @@ class AppRoutes {
   static const configuracoes = '/configuracoes';
   static const pacientes = '/pacientes';
   static const equipeMedica = '/equipe-medica';
+  static const monteCarlo = '/simulador';
+  static const projecao12m = '/projecao-12m';
   static const overbooking = '/overbooking';
   static const recepcao = '/recepcao';
   static const recepcaoMonitor = '/monitor-recepcao';
@@ -70,9 +77,11 @@ class AppRoutes {
   static const agentDashboard = '/agent-dashboard';
   static const totem = '/totem';
   static const agendaMedico = '/agenda-medico';
+  static const agendaPublica = '/agenda-publica';
 
   static String appointmentDetail(String id) => '/agendamentos/$id';
   static String agendaMedicoPath(String id) => '/agenda-medico/$id';
+  static String agendaPublicaPath(String id) => '/agenda-publica/$id';
 
   static const authRoutes = {login, register, choosePlan};
 }
@@ -103,7 +112,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final isPublic = loc == AppRoutes.totem ||
           loc == AppRoutes.recepcaoMonitor ||
-          loc.startsWith('${AppRoutes.agendaMedico}/');
+          loc.startsWith('${AppRoutes.agendaMedico}/') ||
+          loc.startsWith('${AppRoutes.agendaPublica}/');
       if (isPublic) return null;
 
       final auth = ref.read(authProvider);
@@ -155,6 +165,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (c, s) =>
             MedicoAgendaScreen(doctorId: s.pathParameters['id']!),
       ),
+      // Página pública do médico (perfil + horários disponíveis, no estilo do
+      // totem) — o link que o profissional compartilha com os pacientes.
+      GoRoute(
+        path: '${AppRoutes.agendaPublica}/:id',
+        builder: (c, s) =>
+            AgendaPublicaScreen(doctorId: s.pathParameters['id']!),
+      ),
       ShellRoute(
         navigatorKey: _shellKey,
         builder: (context, state, child) =>
@@ -191,6 +208,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (c, s) =>
                 const NoTransitionPage(child: CerebroScreen()),
           ),
+          // Evidências — pesquisa PubMed/NCBI (.specify/EVIDENCIAS.md)
+          GoRoute(
+            path: AppRoutes.evidencias,
+            pageBuilder: (c, s) =>
+                const NoTransitionPage(child: EvidenciasScreen()),
+          ),
           GoRoute(
             path: AppRoutes.perfilUsuario,
             builder: (c, s) => const PerfilUsuarioScreen(),
@@ -226,6 +249,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.overbooking,
             builder: (c, s) => const OverbookingScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.monteCarlo,
+            builder: (c, s) => const MonteCarloScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.projecao12m,
+            builder: (c, s) => const Projecao12mScreen(),
           ),
           GoRoute(
             path: AppRoutes.recepcao,

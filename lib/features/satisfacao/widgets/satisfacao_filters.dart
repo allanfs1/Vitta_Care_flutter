@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/textos.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
@@ -39,9 +41,9 @@ class SatisfacaoFilters extends StatelessWidget {
             // Primeira linha de inputs
             Row(
               children: [
-                Expanded(child: _buildField(context, label: 'PACIENTE / NOME', hint: 'Nome...', prefixIcon: Icons.person_outline)),
+                Expanded(child: _buildField(context, label: context.txt.t('satisfacao.pacienteNome'), hint: 'Nome...', prefixIcon: Icons.person_outline)),
                 const SizedBox(width: AppSpacing.lg),
-                Expanded(child: _buildField(context, label: 'E-MAIL', hint: 'Email do paciente...', prefixIcon: Icons.email_outlined)),
+                Expanded(child: _buildField(context, label: context.txt.t('satisfacao.eMail'), hint: 'Email do paciente...', prefixIcon: Icons.email_outlined)),
                 const SizedBox(width: AppSpacing.lg),
                 Expanded(child: _buildField(context, label: 'CPF', hint: '000.000.000-00', prefixIcon: Icons.badge_outlined)),
                 const SizedBox(width: AppSpacing.lg),
@@ -54,7 +56,7 @@ class SatisfacaoFilters extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Expanded(child: _buildField(context, label: 'INÍCIO', hint: 'dd/mm/aaaa', suffixIcon: Icons.calendar_today_outlined)),
+                Expanded(child: _buildField(context, label: context.txt.t('satisfacao.inicio'), hint: 'dd/mm/aaaa', suffixIcon: Icons.calendar_today_outlined)),
                 const SizedBox(width: AppSpacing.lg),
                 Expanded(child: _buildField(context, label: 'FIM', hint: 'dd/mm/aaaa', suffixIcon: Icons.calendar_today_outlined)),
                 const SizedBox(width: AppSpacing.lg),

@@ -29,6 +29,14 @@ abstract class AuthService {
   /// UID do usuário logado (Firebase), se houver.
   String? get currentUid;
 
+  /// ID token do usuário logado, para autenticar chamadas a Cloud Functions
+  /// que exigem login (ex.: `pubmedProxy`). `null` quando não há sessão.
+  ///
+  /// Existe no contrato — e não como `FirebaseAuth.instance` direto no
+  /// chamador — para que o modo demonstração continue compilando e rodando
+  /// sem Firebase.
+  Future<String?> idToken();
+
   /// `true` quando o Firebase inicializou (login real disponível). `false`
   /// indica modo de demonstração (serviço simulado) — usado para o banner de setup.
   bool get isFirebaseEnabled;
@@ -53,6 +61,20 @@ class FirebaseAuthService implements AuthService {
 
   @override
   String? get currentUid => _auth.currentUser?.uid;
+
+  @override
+  Future<String?> idToken() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    try {
+      return await user.getIdToken();
+    } catch (e) {
+      // Rede caída ou token revogado: quem chamou trata a ausência como "sem
+      // sessão" e mostra o erro adequado, em vez de quebrar a tela.
+      debugPrint('idToken falhou: $e');
+      return null;
+    }
+  }
 
   @override
   Stream<String?> authStateChanges() =>
@@ -167,6 +189,12 @@ class MockAuthService implements AuthService {
 
   @override
   String? get currentUid => _email == null ? null : 'mock-uid';
+
+  /// Modo demonstração não tem token real. Devolver `null` faz as chamadas que
+  /// exigem login recusarem com mensagem clara, em vez de tentarem a rede com
+  /// uma credencial inventada.
+  @override
+  Future<String?> idToken() async => null;
 
   @override
   Stream<String?> authStateChanges() => const Stream<String?>.empty();

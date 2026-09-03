@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -74,8 +76,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
-      title: 'Criar conta',
-      subtitle: 'Comece a gerenciar sua clínica em minutos.',
+      title: context.txt.t('auth.criarConta'),
+      subtitle: context.txt.t('auth.comeceAGerenciarSuaClinicaEmMinutos'),
       child: Form(
         key: _formKey,
         child: Column(
@@ -114,8 +116,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               obscureText: _obscure,
               validator: Validators.password,
               decoration: InputDecoration(
-                labelText: 'Senha',
-                helperText: 'Mín. 8 caracteres, com maiúscula, número e símbolo',
+                labelText: context.txt.t('auth.senha'),
+                helperText: context.txt.t('auth.min8CaracteresComMaiusculaNumeroESimbolo'),
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
                   icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),

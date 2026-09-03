@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/app_providers.dart';
@@ -209,12 +211,12 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                         child: IconButton.filledTonal(
                           onPressed: _lookupCep,
                           icon: const Icon(Icons.search),
-                          tooltip: 'Buscar CEP',
+                          tooltip: context.txt.t('perfil.buscarCep'),
                         ),
                       ),
                     ],
                   ),
-                  _field(_street, 'Endereço'),
+                  _field(_street, context.txt.t('perfil.endereco')),
                   Row(
                     children: [
                       Expanded(child: _field(_number, 'Número')),
@@ -297,7 +299,7 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Alterar senha', style: Theme.of(ctx).textTheme.titleLarge),
+              Text(context.txt.t('perfil.alterarSenha'), style: Theme.of(ctx).textTheme.titleLarge),
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: current,

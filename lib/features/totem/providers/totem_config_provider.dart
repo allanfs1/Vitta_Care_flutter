@@ -97,3 +97,29 @@ class TotemConfigNotifier extends StateNotifier<TotemConfig> {
     super.dispose();
   }
 }
+
+/// Config do totem de uma clínica **específica**, para telas públicas (sem
+/// login) que não podem depender de [selectedClinicIdProvider] — ele começa num
+/// placeholder até o Firestore responder e apontaria para a clínica errada.
+///
+/// Lê `tb_totem_config/{clinicaId}` uma única vez. Sem Firebase, sem id ou com
+/// as regras bloqueando a leitura anônima, devolve a config padrão — o que
+/// importa aqui é a grade de horários (abertura/fechamento, duração, almoço).
+final publicTotemConfigProvider =
+    FutureProvider.family<TotemConfig, String>((ref, clinicId) async {
+  final id = clinicId.trim();
+  if (id.isEmpty || !ref.watch(firebaseEnabledProvider)) {
+    return const TotemConfig();
+  }
+  try {
+    final snap = await FirebaseFirestore.instance
+        .collection('tb_totem_config')
+        .doc(id)
+        .get();
+    final raw = snap.data()?['config'];
+    if (raw is! Map) return const TotemConfig();
+    return TotemConfig.fromJson(Map<String, dynamic>.from(raw));
+  } catch (_) {
+    return const TotemConfig();
+  }
+});

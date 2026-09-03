@@ -75,7 +75,9 @@ class AgentChatController extends StateNotifier<AgentChatState> {
           clinicaId: clinicaId,
           callTool: (name, args) async {
             final r = await server.callTool(name, args);
-            return r.text;
+            // Propaga a falha estruturada da tool em vez de deixar o loop
+            // adivinhar por prefixo de texto.
+            return (text: r.text, isError: r.isError);
           },
         );
 

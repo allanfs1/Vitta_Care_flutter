@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/clinic.dart';
@@ -192,7 +194,7 @@ class _PerfilClinicaScreenState extends ConsumerState<PerfilClinicaScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text('Endereço completo com busca por CEP disponível na edição (PC-02).',
+            Text(context.txt.t('clinica.enderecoCompletoComBuscaPorCepDisponivelNa'),
                 style: theme.textTheme.bodySmall),
             const SizedBox(height: AppSpacing.md),
             SizedBox(
@@ -269,7 +271,7 @@ class _HoursRow extends StatelessWidget {
           ),
           Expanded(
             child: hour.closed
-                ? Text('Fechado', style: theme.textTheme.bodyMedium)
+                ? Text(context.txt.t('clinica.fechado'), style: theme.textTheme.bodyMedium)
                 : Text('${hour.open} – ${hour.close}',
                     style: theme.textTheme.bodyMedium),
           ),

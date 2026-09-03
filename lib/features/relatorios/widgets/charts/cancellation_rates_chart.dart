@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../../core/i18n/textos.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../../../core/theme/app_colors.dart';

@@ -57,3 +57,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Credenciais de build local (ver .dart-defines.example.json)
+.dart-defines.json

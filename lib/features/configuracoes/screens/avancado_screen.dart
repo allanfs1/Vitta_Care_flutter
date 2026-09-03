@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/i18n/idioma.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/services/app_providers.dart';
@@ -20,11 +22,13 @@ class _AvancadoScreenState extends ConsumerState<AvancadoScreen> {
   static const _version = '1.0.0 (build 1)';
   int _versionTaps = 0;
 
-  static const _locales = {
-    'pt_BR': 'Português (BR)',
-    'en_US': 'Inglês',
-    'es_ES': 'Espanhol',
-  };
+  /// Derivado de [Idioma] em vez de repetido aqui: acrescentar um idioma é um
+  /// item de enum, e não uma edição em dois lugares que é fácil deixar pela
+  /// metade — foi assim que a tela ficou oferecendo três idiomas enquanto o
+  /// app só tinha strings em português.
+  static Map<String, String> get _locales => {
+        for (final i in Idioma.values) i.chave: '${i.bandeira}  ${i.rotulo}',
+      };
   static const _dateFormats = {
     'dd/MM/yyyy': 'DD/MM/AAAA',
     'MM/dd/yyyy': 'MM/DD/AAAA',
@@ -64,7 +68,7 @@ class _AvancadoScreenState extends ConsumerState<AvancadoScreen> {
             title: 'Idioma e região',
             children: [
               OptionTile(
-                title: 'Idioma (CFG-07a)',
+                title: 'Idioma',
                 icon: Icons.translate,
                 value: _locales[s.locale] ?? s.locale,
                 onTap: () => _pickFromMap(

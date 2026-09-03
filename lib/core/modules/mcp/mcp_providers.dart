@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../features/evidencias/evidencias_providers.dart';
 import '../../services/app_providers.dart';
 import 'mcp_server.dart';
 
@@ -19,7 +20,14 @@ final mcpServerProvider = Provider<McpServer>((ref) {
   final clinicaId = ref.watch(clinicaResolvidaProvider);
   // O Firestore é resolvido sob demanda dentro do McpContext; em modo
   // demonstração os erros viram McpResult de erro (não derrubam a UI).
-  return createMcpServer(defaultClinicaId: clinicaId);
+  return createMcpServer(
+    defaultClinicaId: clinicaId,
+    // Evidência científica: `null` fora do Firebase (a Cloud Function exige
+    // ID token), e as tools `pubmed_*` recusam com mensagem explicativa.
+    pubmed: ref.watch(firebaseEnabledProvider)
+        ? ref.watch(pubmedServiceProvider)
+        : null,
+  );
 });
 
 /// Especificações das ferramentas MCP disponíveis (para alimentar o LLM).

@@ -259,4 +259,60 @@ const List<HelpAnswer> kHelpAnswers = [
         'ativa. Todos os dados (agenda, indicadores) passam a refletir a clínica '
         'escolhida.',
   ),
+
+  // ───────────────────────────────────────────── Simulador de Agenda
+  HelpAnswer(
+    keywords: ['o que e o simulador', 'para que serve o simulador',
+        'como funciona o simulador', 'simulador de agenda', 'monte carlo',
+        'o que e monte carlo', 'como o simulador funciona'],
+    answer: 'O **Simulador de Agenda** responde uma pergunta: quantos '
+        'encaixes cabem hoje sem lotar a sala de espera? Em vez de uma média, '
+        'ele roda milhares de cenários de faltas para o dia escolhido e '
+        'mostra a distribuição inteira — o dia bom, o típico e o ruim. A '
+        'decisão de overbooking usa o dia ruim (P95), não a média.',
+    tour: 'simulador',
+  ),
+  HelpAnswer(
+    keywords: ['quantos encaixes', 'posso encaixar', 'cabe encaixe',
+        'quantos pacientes encaixar', 'overbooking hoje', 'abrir encaixe'],
+    answer: 'Abra o **Simulador** (menu lateral) na data desejada e veja o '
+        'cartão de recomendação na aba Decisão — ele diz quantos encaixes '
+        'cabem, ou explica por que nenhum cabe hoje. Antes disso, confira o '
+        'cartão de lista de espera: chamar quem já tem vaga liberada vem '
+        'sempre primeiro.',
+    tour: 'simulador',
+  ),
+  HelpAnswer(
+    keywords: ['p95', 'sobredispersao', 'sobredispersão', 'o que e phi',
+        'o que e p95', 'dia ruim', 'faltas p95'],
+    answer: '**P95** é o número de faltas do "dia ruim" — em 1 a cada 20 '
+        'dias, as faltas passam desse valor. É por isso que ele decide '
+        'overbooking, e não a média. **Sobredispersão (φ)** mede se as '
+        'faltas de um mesmo dia se movem juntas: φ = 1,00 é independência; '
+        'acima disso, um fator comum (chuva, feriado) empurra várias faltas '
+        'ao mesmo tempo.',
+    tour: 'simulador',
+  ),
+  HelpAnswer(
+    keywords: ['calibracao do simulador', 'calibração do simulador',
+        'simulador nao calibrado', 'dados nao permitem calibrar',
+        'calibrar simulador'],
+    answer: 'A aba **Calibração** do simulador compara o modelo com o '
+        'histórico real da clínica. Quando aparece "os dados não permitem '
+        'calibrar", a simulação está usando taxas padrão — não medidas nesta '
+        'clínica — geralmente por faltar histórico suficiente ou por '
+        'inconsistência nos dados. Vale abrir essa aba antes de tratar a '
+        'recomendação como definitiva.',
+    tour: 'simulador',
+  ),
+  HelpAnswer(
+    keywords: ['planejar a semana', 'plano semanal', 'planejador de agenda',
+        'simular a semana toda'],
+    answer: 'Na aba **Planejador** do Simulador, escolha a janela (3, 7 ou '
+        '14 dias) e toque em "Montar plano" — ele roda a simulação para cada '
+        'dia e monta o plano de encaixes da semana inteira de uma vez, com a '
+        'IA apontando onde olhar primeiro. Nenhum encaixe é criado '
+        'automaticamente: aplicar na agenda continua sendo uma ação sua.',
+    tour: 'simulador',
+  ),
 ];

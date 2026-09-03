@@ -101,7 +101,13 @@ class _Intro extends StatelessWidget {
       'Faça um diagnóstico completo do absenteísmo da clínica nesta semana',
       'Prepare um resumo operacional: agenda de hoje, riscos e overbooking',
     ];
-    return Padding(
+    // Rolável: em telas baixas os cards de exemplo + a barra de input abaixo
+    // estouravam o `Expanded` ("BOTTOM OVERFLOWED"). Centraliza quando há espaço.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Padding(
       padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -153,6 +159,9 @@ class _Intro extends StatelessWidget {
               ),
             ),
         ],
+      ),
+        ),
+        ),
       ),
     );
   }

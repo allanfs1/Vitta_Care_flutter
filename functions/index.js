@@ -6,7 +6,9 @@
  * do projeto. Faça sempre deploy direcionado:
  *
  *   firebase deploy --only functions:chatProxy,functions:emailProxy,\
- *     functions:whatsappProxy,functions:analyzeDocument,functions:anthropicProxy
+ *     functions:whatsappProxy,functions:analyzeDocument,functions:anthropicProxy,\
+ *     functions:publicAgendaProxy,functions:publicAgendaSolicitar,\
+ *     functions:pubmedProxy
  */
 Object.assign(
   exports,
@@ -17,5 +19,7 @@ Object.assign(
   require("./whatsappProxy"),
   require("./anthropicProxy"),
   require("./scheduledTasksCron"),
-  require("./vigiaCron")
+  require("./vigiaCron"),
+  require("./publicAgendaProxy"),
+  require("./pubmedProxy")
 );

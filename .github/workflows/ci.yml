@@ -1,0 +1,70 @@
+name: CI
+
+# Trava merge com suíte vermelha. É o único guarda-corpo automático do
+# repositório: sem isto, `flutter analyze` e os ~265 testes só rodam se alguém
+# lembrar — e regressões silenciosas (overflow de layout que depende da data,
+# Timer vazando em teste) passam despercebidas até alguém abrir a tela.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Um PR atualizado cancela a execução anterior — não faz sentido gastar runner
+# validando um commit que já foi substituído.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    name: Flutter — analyze + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Dependências
+        run: flutter pub get
+
+      - name: Análise estática
+        run: flutter analyze lib test
+
+      # `--concurrency=1` de propósito: em paralelo os runners esgotam threads
+      # do Dart ("Could not start thread DartWorker") e a suíte morre por
+      # recurso, não por teste quebrado. Mais lento, mas determinístico.
+      - name: Testes
+        run: flutter test --concurrency=1 --reporter=compact
+
+  functions:
+    name: Cloud Functions — testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: functions
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Dependências
+        # `npm ci` exige package-lock.json; cai para `npm install` se ele não
+        # existir ainda, em vez de quebrar o job por um arquivo ausente.
+        run: npm ci || npm install
+
+      - name: Testes
+        run: npm test

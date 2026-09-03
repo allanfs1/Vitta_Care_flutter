@@ -17,6 +17,7 @@ import '../../core/services/app_providers.dart';
 import '../overbooking/occupancy.dart';
 import 'models/totem_config.dart';
 import 'providers/totem_config_provider.dart';
+import 'totem_booking.dart';
 import 'widgets/totem_config_panel.dart';
 
 const _kBrand = Color(0xFFFF3B30);
@@ -64,6 +65,14 @@ class TotemScreen extends ConsumerStatefulWidget {
 
 class _TotemScreenState extends ConsumerState<TotemScreen> {
   final _rng = Random();
+
+  /// Lógica de agendamento isolada (ids únicos, senha sem colisão, recheck de
+  /// capacidade) — ver `totem_booking.dart` e `TESTE-SISTER/`.
+  final _booking = TotemBooking();
+
+  /// Senhas de fila já emitidas nesta sessão do totem — evita duas iguais.
+  final Set<String> _emittedSenhas = {};
+
   Timer? _clock;
   DateTime _now = DateTime.now();
 
@@ -309,8 +318,9 @@ class _TotemScreenState extends ConsumerState<TotemScreen> {
   }
 
   String _genSenha(String specialty) {
-    final initial = specialty.isNotEmpty ? specialty[0].toUpperCase() : 'G';
-    return '$initial${100 + _rng.nextInt(900)}';
+    final s = _booking.senha(specialty, taken: _emittedSenhas);
+    _emittedSenhas.add(s);
+    return s;
   }
 
   // ------------------------------------------------------------- actions
@@ -533,7 +543,7 @@ class _TotemScreenState extends ConsumerState<TotemScreen> {
       return;
     }
     await _createAppointment(
-      patientId: 'totem-${DateTime.now().millisecondsSinceEpoch}',
+      patientId: _booking.newGuestPatientId(),
       name: _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
       email: _emailCtrl.text.trim(),
@@ -664,14 +674,39 @@ class _TotemScreenState extends ConsumerState<TotemScreen> {
 
     final specialty =
         _specialty != 'Todos' ? _specialty : doctor.primarySpecialty;
-    final senha = _genSenha(specialty);
 
     setState(() => _busy = true);
     await Future<void>.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
 
+    // Revalida a capacidade do slot AGORA (F3): entre a seleção do horário e
+    // esta confirmação, outras pessoas (outros totens/abas) podem ter ocupado
+    // as últimas vagas. Sem transação no servidor, esta é a última barreira.
+    final bookedNow = TotemBooking.bookedInSlot(
+      appointments: ref.read(appointmentsProvider),
+      date: _date,
+      doctorId: doctor.id,
+      slotTime: _selTime!,
+      appointmentDuration: _tc.appointmentDuration,
+      openHour: _tc.openHour,
+    );
+    final capacityNow = doctor.capacityAt(_date.weekday, _selTime!);
+    if (!TotemBooking.hasRoom(booked: bookedNow, capacity: capacityNow)) {
+      setState(() {
+        _busy = false;
+        _selTime = null;
+        _selDoctor = null;
+        _step = _Step.schedule;
+      });
+      _snack('Este horário acabou de lotar. Escolha outro, por favor.');
+      _bump();
+      return;
+    }
+
+    final senha = _genSenha(specialty);
     final appt = Appointment(
-      id: 'apt-${DateTime.now().millisecondsSinceEpoch}',
-      clinicId: ref.read(selectedClinicIdProvider),
+      id: _booking.newAppointmentId(),
+      clinicId: ref.read(clinicaResolvidaProvider),
       patientId: patientId,
       patientName: name,
       doctorId: doctor.id,
@@ -686,7 +721,9 @@ class _TotemScreenState extends ConsumerState<TotemScreen> {
       crm: doctor.crm,
       motivo: 'Agendado via totem',
     );
-    ref.read(appointmentsProvider.notifier).add(appt);
+    // `create()` (não `add()`): reage na hora E persiste em `tb_agendamentos`,
+    // então o agendamento chega à recepção/agenda e sobrevive ao reload (F2).
+    ref.read(appointmentsProvider.notifier).create(appt);
     _sendConfirmations(email: email, appt: appt, senha: senha, isReschedule: false);
 
     if (!mounted) return;

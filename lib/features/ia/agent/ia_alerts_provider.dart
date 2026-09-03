@@ -29,6 +29,13 @@ class IaAlert {
 /// Varre o dia (escopo da clínica) a cada 60s e devolve alertas reais:
 /// e-mails com falha e overbookings nas últimas 24h.
 final iaAlertsProvider = StreamProvider<List<IaAlert>>((ref) async* {
+  // Sem Firebase (modo demonstração / testes) não há fila de e-mail nem
+  // agendamentos reais para varrer — e tocar `FirebaseFirestore.instance`
+  // aqui lançaria. Ver invariante do projeto sobre providers e Firebase.
+  if (!ref.watch(firebaseEnabledProvider)) {
+    yield const [];
+    return;
+  }
   final clinicaId = ref.watch(selectedClinicIdProvider);
   if (clinicaId.isEmpty) {
     yield const [];

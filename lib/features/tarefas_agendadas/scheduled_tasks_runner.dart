@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/modules/mcp/mcp_providers.dart';
 import '../ia/agent/agent_controller.dart';
+import '../ia/agent/ai_agent_service.dart';
 import 'scheduled_task.dart';
 import 'scheduled_tasks_service.dart';
 
@@ -69,9 +70,11 @@ class ScheduledTasksRunner {
     final service = _ref.read(aiAgentServiceProvider);
     var toolsUsed = 0;
 
-    Future<String> callTool(String name, Map<String, dynamic> args) async {
+    Future<ToolOutcome> callTool(
+        String name, Map<String, dynamic> args) async {
       toolsUsed++;
-      return (await server.callTool(name, args)).text;
+      final r = await server.callTool(name, args);
+      return (text: r.text, isError: r.isError);
     }
 
     final system = task.isReport ? _reportSystem : _actionSystem;

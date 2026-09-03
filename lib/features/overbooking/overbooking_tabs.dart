@@ -13,6 +13,7 @@ import 'overbooking_engine.dart';
 import 'overbooking_models.dart';
 import 'overbooking_providers.dart';
 import 'overbooking_widgets.dart';
+import '../monte_carlo/widgets/mc_ponte_overbooking.dart';
 
 // ───────────────────────── Visão Geral (OVB-02/03) ─────────────────────────
 
@@ -79,6 +80,9 @@ class OverviewTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
+        // Ponte com o Simulador: o painel mostra o que já ocupou a agenda;
+        // o cartão traz o que a distribuição diz sobre o que ainda vem.
+        const McPonteOverbooking(),
         GridView.count(
           crossAxisCount: cols,
           shrinkWrap: true,

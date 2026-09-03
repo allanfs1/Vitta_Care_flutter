@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../assistente/assistant_anchors.dart';
 import '../assistente/assistant_tours.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/app_card.dart';
 import '../../navigation/app_router.dart';
@@ -52,6 +53,7 @@ class _RecepcaoScreenState extends ConsumerState<RecepcaoScreen> with SingleTick
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const _AvisoDemonstracao(),
           // HEADER
           Padding(
             padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.md),
@@ -394,4 +396,44 @@ class _RecepcaoScreenState extends ConsumerState<RecepcaoScreen> with SingleTick
         ManchesterPriority.yellow => '60 MIN',
         ManchesterPriority.green => '120 MIN',
       };
+}
+
+/// Faixa que declara que a fila não está ligada ao banco.
+///
+/// O módulo tem um modelo local rico (triagem Manchester, sinais vitais,
+/// microárea/ACS) que **não corresponde** ao schema das coleções de produção
+/// declaradas no `ModuleRegistry` (`queue_realoc`, `tb_confirmationHistory`).
+/// Persistir sem reconciliar os dois inventaria um terceiro modelo para a mesma
+/// fila, então a decisão foi adiada — e enquanto isso a tela precisa dizer o
+/// que é. Uma recepção que perde a fila num reload sem avisar é pior que uma
+/// que avisa. Ver `.specify/ATENCAO.md`.
+class _AvisoDemonstracao extends StatelessWidget {
+  const _AvisoDemonstracao();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl, vertical: AppSpacing.sm),
+      color: AppColors.warning.withValues(alpha: 0.12),
+      child: Row(
+        children: [
+          Icon(Icons.science_outlined, size: 15, color: AppColors.warning),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'Módulo em demonstração — a fila não é gravada no banco e será '
+              'reiniciada ao recarregar a página.',
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.3,
+                color: AppColors.textSecondaryOf(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

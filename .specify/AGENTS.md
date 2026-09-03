@@ -157,10 +157,17 @@ Módulo de recursos de IA integrada, com funcionalidades diferenciadas para clí
 | IA-02 | Análise de dados | IA para análise preditiva e descritiva de dados da clínica (agendamentos, absenteísmo, desempenho). |
 | IA-03 | Geração de relatórios | Geração automática de relatórios textuais com insights em linguagem natural. |
 | IA-04 | Criação de dashboards | Geração de visualizações de dados personalizadas via prompts do usuário. |
+| IA-05 | **Vigia — análise diária** | Ciclo automático que lê a clínica uma vez por dia, publica relatório em `/relatorios` e **propõe** rotinas de prevenção em `/tarefas-agendadas`. Spec completa: [`VIGIA.md`](VIGIA.md). |
 
 ### Regras de Negócio
 - Funcionalidades B2B (IA-01) devem verificar o tipo da clínica antes de habilitar o recurso.
 - Todas as interações com IA devem exibir indicador de carregamento e tratamento de erros.
+- **A IA nunca executa automação sozinha.** Rotinas propostas pelo Vigia (IA-05)
+  nascem com `status: "suggested"` e só passam a rodar depois de uma pessoa
+  aprovar. Ver `VIGIA.md` §2 — são três travas independentes, nenhuma
+  dependendo da UI se comportar.
+- Escrita da IA no Cérebro é auditada em `tb_cerebro_eventos` com motivo
+  obrigatório e nível de confiança.
 
 ---
 
@@ -516,27 +523,44 @@ Hub de IA centralizado com chat interativo, geração de relatórios, análise p
 
 ```
 features/ia/
-├── screens/
-│   ├── ia_hub_screen.dart
-│   ├── ia_chat_screen.dart
-│   ├── ia_relatorios_screen.dart
-│   ├── ia_dashboard_gen_screen.dart
-│   └── ia_agendamento_inteligente_screen.dart
-├── widgets/
-│   ├── chat_bubble.dart
-│   ├── chat_input_bar.dart
-│   ├── relatorio_ia_card.dart
-│   ├── sugestao_horario_tile.dart
-│   └── ia_loading_indicator.dart
-├── models/
-│   ├── chat_message.dart
-│   ├── relatorio_ia.dart
-│   └── sugestao_agendamento.dart
-├── providers/
-│   └── ia_provider.dart
-└── services/
-    └── azure_deepseek_service.dart
+├── ia_screen.dart                  # hub /ia — 3 colunas responsivas
+├── agent/
+│   ├── ai_agent_service.dart       # loop de ferramentas (6 rodadas) + planner
+│   ├── agent_controller.dart       # estado do chat
+│   ├── agent_models.dart           # ChatMessage, PlanTask
+│   ├── agent_orchestrator.dart     # modo Agentes (execução paralela)
+│   ├── agent_plans_service.dart    # tb_agent_plans
+│   ├── ia_chats_service.dart       # tb_ia_chats (histórico)
+│   ├── ia_alerts_provider.dart     # alertas proativos (poll 60 s)
+│   ├── ia_suggestions.dart         # autocomplete por categoria
+│   ├── ia_session.dart             # estado da sessão / sidebars
+│   ├── chat_interface.dart
+│   ├── document_service.dart       # anexos → Cloud Function analyzeDocument
+│   ├── voice_input_service.dart    # STT pt_BR (speech_to_text)
+│   └── ai_export_service.dart      # exportar conversa / plano
+├── vigia/                          # ciclo diário — ver VIGIA.md
+│   ├── vigia_service.dart
+│   ├── vigia_prompt.dart
+│   ├── vigia_models.dart
+│   └── vigia_providers.dart
+└── widgets/                        # 14 widgets da /ia
+    ├── ai_dashboard_left_sidebar.dart
+    ├── ai_dashboard_main_area.dart
+    ├── ai_dashboard_right_sidebar.dart
+    ├── ai_chat_panel.dart · ai_chat_sheet.dart
+    ├── ai_agents_panel.dart · saved_plans_panel.dart
+    ├── ai_chart_view.dart          # blocos json-chart → gráficos
+    ├── ai_rich_content.dart · ai_report_card.dart
+    ├── ia_suggestions_panel.dart
+    ├── smart_scheduling_card.dart  # IA-06 (B2B)
+    ├── attachment_button.dart · voice_mic_button.dart
 ```
+
+> ⚠️ **Corrigido em 2026-09-01.** Esta seção descrevia uma estrutura
+> (`screens/ia_hub_screen.dart`, `models/`, `providers/ia_provider.dart`,
+> `services/azure_deepseek_service.dart`) que **nunca existiu no código**. As
+> ferramentas do agente não ficam aqui — vivem em `lib/core/modules/mcp/`
+> (ver [`MCP.md`](MCP.md)).
 
 ### Funcionalidades Detalhadas
 
@@ -550,32 +574,66 @@ features/ia/
 | IA-06 | Agendamento inteligente (B2B) | **Disponível apenas para clínicas privadas** (`tb_clinica.tipo == 'privada'`). IA sugere horários otimizados baseado em: histórico de comparecimento do paciente, ocupação do médico, horários com menor absenteísmo (heatmap). Usa dados de `tb_historico`, `dashboard_risco`, `tb_hour_agenda`. |
 
 ### Integração com Azure Foundry (DeepSeek)
+
+Centralizada em `lib/core/services/ai_config.dart` — **não** num
+`azure_deepseek_service.dart` (esse arquivo não existe).
+
 ```dart
-// azure_deepseek_service.dart
-// Endpoint: https://micro-mpfiisv0-eastus2.services.ai.azure.com/openai/v1/
-// Modelos disponíveis:
-//   - DeepSeek-V4-Flash (rápido, para chat e análises simples)
-//   - DeepSeek-V4-Pro (avançado, para relatórios complexos e predições)
-// Autenticação: API Key via header
-// Formato: OpenAI-compatible (chat.completions)
+// lib/core/services/ai_config.dart
+// Produção:  --dart-define=AI_PROXY_URL=<url da Cloud Function chatProxy>
+//            → a credencial fica no servidor, nunca no bundle.
+// Dev:       --dart-define=AZURE_AI_KEY=<chave>  (acesso direto)
+//
+// Endpoint direto (AI Foundry):
+//   https://micro-mrfgtgfz-eastus2.services.ai.azure.com/models/chat/completions
+//     ?api-version=2024-05-01-preview
+// Modelos: DeepSeek-V4-Flash (padrão) · DeepSeek-V4-Pro
+// Formato: OpenAI-compatible (chat/completions, com tools/tool_calls)
 ```
 
+> ⚠️ **Corrigido em 2026-09-01.** O endpoint documentado aqui era
+> `micro-mpfiisv0-eastus2.services.ai.azure.com/openai/v1/`, que mistura o nome
+> do recurso de **Document Intelligence** (`micro-mpfiisv0`) com o domínio do
+> **AI Foundry** — não resolve. Os dois recursos são distintos e têm chaves
+> distintas. Ver [`AI_chaves.md`](AI_chaves.md) §3.
+
 ### Regras de Negócio
-- **Rate limiting:** Máximo 30 requests/minuto por clínica.
-- **Contexto:** Cada request inclui dados resumidos da clínica (últimos 30 dias) como system prompt.
-- **B2B check:** Antes de habilitar IA-06, verificar `tb_plan_user` → `tb_plans.intergracao == true`.
-- **Loading:** Toda interação IA exibe skeleton/shimmer + texto "Processando com IA...".
-- **Fallback:** Se API falhar, exibir mensagem amigável e opção de retry.
+
+| Regra | Estado |
+|---|---|
+| **Isolamento multi-tenant:** toda ferramenta opera na clínica de `clinicaResolvidaProvider`; sem clínica resolvida, **nenhuma tool executa** | ✅ `MCP.md` §3.1 |
+| **A IA nunca liga uma automação sozinha:** rotinas propostas nascem `suggested` e exigem aprovação humana | ✅ `VIGIA.md` §2 |
+| **B2B check (IA-06):** o agendamento inteligente só habilita para clínica **privada**; os demais tipos veem o recurso *bloqueado*, não escondido | ✅ `smart_scheduling_card.dart` |
+| **Loading:** toda interação de IA mostra progresso — chips de ferramenta piscando + streaming do texto | ✅ |
+| **Fallback:** falha de API vira mensagem amigável; 429/503 têm retry com backoff que respeita `Retry-After` | ✅ `ai_agent_service.dart` |
+| **Rate limiting (30 req/min por clínica)** | ❌ **não implementado** — nem no app, nem na `chatProxy` |
+| **Contexto de 30 dias no system prompt** | 🟡 o system prompt carrega o `clinicaId`; o resumo da clínica não é pré-injetado — o agente busca via ferramentas |
+
+> ⚠️ Corrigido em 2026-09-01: a versão anterior afirmava que o B2B era checado
+> por `tb_plan_user` → `tb_plans.intergracao == true` (o gate real é o tipo da
+> clínica) e listava rate limiting como regra vigente, quando não existe código
+> que a aplique.
 
 ### Coleções Firestore Utilizadas
-- `chats` — CRUD (histórico de conversas com IA)
-- `tb_relatorio_ia` — escrita (relatórios gerados)
-- `tb_agendamentos` — leitura (dados para análise)
-- `tb_faltas_data` — leitura (dados preditivos)
-- `dashboard_risco` — leitura (scores de risco)
-- `patient_reputation` — leitura (reputação do paciente)
-- `tb_historico` — leitura (histórico comportamental)
-- `tb_plan_user` / `tb_plans` — leitura (verificar se clínica tem direito a funcionalidades B2B)
+
+| Coleção | Uso |
+|---|---|
+| `tb_ia_chats` | CRUD — histórico de conversas |
+| `tb_agent_plans` | CRUD — planos do modo Agentes |
+| `tb_relatorio_ia` | escrita — relatórios gerados |
+| `tb_scheduled_tasks` | CRUD — rotinas (inclui as propostas pela IA) |
+| `tb_vigia_ciclos` | escrita — auditoria do ciclo diário |
+| `tb_cerebro_notas` / `tb_cerebro_eventos` | CRUD — memória do agente + auditoria |
+| `tb_agendamentos` | leitura — dados para análise |
+| `tb_faltas_data` · `dashboard_risco` | leitura — dados preditivos e scores |
+| `patient_reputation` | leitura — reputação do paciente |
+| `email_queue` / `email_logs` | escrita/leitura — fila e log de e-mail |
+
+> ⚠️ A coleção do histórico é **`tb_ia_chats`**, não `chats`. `ModuleRegistry`
+> (`module_registry.dart:279`) ainda declara `['tb_relatorio_ia', 'chats',
+> 'chat_history']` — duas coleções que o código não usa, e sem citar
+> `tb_ia_chats` nem `tb_agent_plans`. Corrigir o registry é item de dívida
+> técnica em [`ATENCAO.md`](ATENCAO.md).
 
 ---
 
@@ -894,6 +952,8 @@ Após o cadastro (e-mail/senha ou Google), o usuário passa por uma **jornada gu
 | 7 | Previsão de Faltas | `features/previsao_faltas/` | Predição de risco de ausência via ML/IA |
 | 8 | Integrações | `features/integracoes/` | Google Calendar, WhatsApp (Z-API), E-mail, Push |
 | 9 | **Configurações do Sistema** | `features/configuracoes/` | Aparência, acessibilidade, notificações, dados |
+| 10 | **Simulador (Monte Carlo)** | `features/monte_carlo/` | Distribuição de faltas do dia e decisão de overbooking por slot |
+| 11 | **Projeção 12 meses** | `features/projecao_12m/` | Cenário de continuidade x intervenção, cadeia de Markov e receita defensável |
 
 ---
 
@@ -1332,3 +1392,302 @@ features/perfil_medico/
 - **PM-04 a PM-08:** Acessível pelo próprio médico (para suas clínicas) ou por admin.
 - **PM-09:** Acessível pelo próprio médico (sua agenda) ou admin (qualquer agenda).
 
+---
+
+## 🎲 Módulo 10 — Simulador de Monte Carlo (`features/monte_carlo/`)
+
+### Objetivo
+
+Responder a uma pergunta operacional: **quantos pacientes cabem amanhã sem
+estourar a sala de espera?** A resposta sai da distribuição inteira de faltas,
+não da média.
+
+Complementa (não substitui) o módulo **Overbooking**, que é determinístico e
+mostra a ocupação já realizada. O Simulador trabalha sobre a agenda ainda em
+aberto e devolve probabilidades.
+
+### Quatro decisões de modelagem
+
+| # | Decisão | Por quê |
+|---|---------|---------|
+| 1 | **Faltas do mesmo dia não são independentes** | Chuva, feriado e ondas respiratórias empurram as faltas do dia na mesma direção. Cópula gaussiana de um fator, que preserva as marginais exatamente — só a dispersão muda. Ignorar isso produz intervalos artificialmente estreitos. |
+| 2 | **Três estados, não dois** | Cancelar com antecedência libera a vaga a tempo; faltar não libera nada. Tratar os dois como a mesma coisa superestima a capacidade recuperável do dia. |
+| 3 | **Overbooking é decidido por slot** | Uma falta às 16h não libera capacidade para um encaixe às 9h. Casa com o `OverbookingEngine`, que já é médico × hora. |
+| 4 | **A fila vem antes do overbooking** | Preencher vaga de fato liberada não cria espera para ninguém; o encaixe especulativo cria. |
+
+### Arquivos
+
+| Arquivo | Papel |
+|---------|-------|
+| `monte_carlo_models.dart` | `ModeloRisco`, `SimulacaoConfig`, `ConsultaRisco`, `Distribuicao`, `SlotForecast`, `CenarioOverbooking`, `EquidadeRelatorio`, `RecomendacaoFila` |
+| `monte_carlo_engine.dart` | Motor puro: cópula de três estados, Poisson-binomial exata, equidade, fila, decisão de encaixes |
+| `monte_carlo_metrics.dart` | CRPS, pinball, cobertura, PIT, ECE |
+| `monte_carlo_calibracao.dart` | Fase F2: taxas por faixa com IC de Wilson, `phi`, `rho` por momentos, backtest fora da amostra |
+| `monte_carlo_isolate.dart` | Amostragem fora da thread de UI via `compute` |
+| `monte_carlo_persistencia.dart` | Fase F3: `tb_mc_execucoes`, `tb_mc_decisoes`, `tb_mc_calibracao` |
+| `monte_carlo_providers.dart` | Riverpod — derivado de `appointmentsProvider` e `clinicDoctorsProvider` |
+| `monte_carlo_historico_demo.dart` | Histórico sintético com parâmetros conhecidos, para o modo demonstração e como oráculo de teste |
+| `monte_carlo_screen.dart` | Tela em 5 abas: Decisão, Planejador, **Ações de IA**, Calibração, Parâmetros |
+| `ia/acoes_ia.dart` | `AcaoIa` (catálogo), `MontadorContexto` (monta os fatos em Dart a partir do resultado determinístico) |
+| `ia/executor_acoes.dart` | `AcoesController` — roda uma ação por vez, checa pré-condições, guarda as respostas |
+| `ia/validador_numeros.dart` | `ValidadorNumeros` — confere toda cifra do texto da IA contra a simulação |
+| `ia/plano_semanal.dart`, `ia/agente_simulacao.dart` | Planejador semanal: varredura de N dias + leitura da IA sobre o plano |
+| `widgets/mc_acoes_ia.dart` | Lista de ações da aba "Ações de IA", agrupada por categoria |
+| `widgets/mc_explicar_icone.dart` | Ícone "Explicar" ao lado de cada gráfico — abre a leitura em folha inferior |
+| `widgets/mc_planejador_tab.dart` | Aba Planejador: varredura de 3/7/14 dias |
+| `widgets/` (demais) | Gráfico de distribuição, abas de Decisão/Calibração/Parâmetros, componentes comuns, ponte para o Overbooking |
+
+### Parâmetro `rho` — e o caminho exato
+
+`rho` é a correlação latente entre desfechos do mesmo dia (típico: 0,02–0,05).
+
+Com **`rho = 0` o motor não simula nada**: devolve as **Poisson-binomiais
+exatas** por convolução dinâmica — sem semente, sem erro de amostragem, em
+microssegundos. Esse caminho reproduz exatamente o modelo independente da v1.0
+e serve de **oráculo** para validar o amostrador nos testes.
+
+### Duas escolhas que mudam a leitura
+
+- **Base de capacidade.** `Doctor.capacityAt()` já devolve `slotLimit + overbook`.
+  Medir contra ela empilha encaixes em cima do overbooking existente. O padrão
+  é `BaseCapacidade.fisica` (`slotLimit`); a tela mostra os dois números.
+- **Modo de encaixe.** `certo` trata o encaixe como comparecimento garantido
+  (limite superior do risco). `probabilistico` convolui com a binomial dos
+  encaixes, mas ignora o fator comum do dia para eles — levemente otimista.
+  São **limites**, não estimativa única.
+
+### Equidade (§12)
+
+Encaixar num slot aumenta a espera de todos os pacientes daquele slot. A
+alocação gulosa só olha risco de estouro, então pode concentrar encaixes nos
+slots com mais pacientes de alto risco — que na base costumam ser os de menor
+renda e maior distância. `EquidadeRelatorio` mede a razão entre a carga que
+cada faixa absorve e a sua presença na agenda; acima do teto (padrão 1,25x) o
+cenário é **reprovado mesmo com risco de estouro baixo**.
+
+### Isolamento e persistência
+
+- A simulação é puramente derivada da agenda — funciona igual no modo
+  demonstração, sem guarda de `firebaseEnabledProvider`.
+- `mcRepositorioProvider` é mock por padrão e sobrescrito em `main` com
+  Firebase ativo, igual a `realocacaoServiceProvider`. A implementação recusa
+  `clinicId` vazio.
+- A ponte no painel de Overbooking é **preguiçosa**: só lê o resultado depois
+  que o Simulador foi aberto na sessão (`mcSessaoAtivaProvider`). Sem isso,
+  abrir o Overbooking dispararia uma simulação inteira como efeito colateral.
+
+### Histórico sintético — como a calibração é exercitada
+
+`monte_carlo_historico_demo.dart` gera histórico com **parâmetros conhecidos**:
+taxas por faixa, correlação diária e sazonalidade (razão de chances por mês,
+`ρ` de 0,024 a 0,075). Isso resolve dois problemas ao mesmo tempo:
+
+1. **Modo demonstração:** sem Firebase a agenda não tem histórico, e a aba
+   Calibração só sabia dizer "dados insuficientes" — o estimador nunca era
+   exercitado antes de encontrar a base real. `mcHistoricoProvider` acrescenta o
+   sintético apenas quando o Firebase está desligado, e a aba exibe um banner
+   dizendo que os números não descrevem clínica nenhuma.
+2. **Oráculo de teste:** se o estimador não recupera o que foi injetado, ele
+   está errado. Todo agendamento leva o prefixo `hist_demo_`.
+
+Recuperação medida em 5.178 consultas / 257 dias:
+
+| Faixa | Injetado | Medido | IC 95% |
+|---|---|---|---|
+| Baixo | 8,2% | 9,3% | 8,3–10,4% |
+| Médio | 19,5% | 21,2% | 19,2–23,3% |
+| Alto | 34,6% | 35,7% | 32,3–39,2% |
+
+`φ = 1,39`, `ρ = 0,052` com IC95 `[0,017; 0,086]`, cobertura do backtest 88%.
+
+### Incerteza sobre o próprio `ρ`
+
+Um módulo cuja tese é "propague a incerteza" não pode entregar o parâmetro de
+dependência como número seco. `rhoIc95` sai de **bootstrap por dia** — reamostra
+o dia, não a consulta, porque a dependência é justamente o que quebra a
+independência dentro do dia. Quando o intervalo contém zero, `rhoConclusivo` é
+`false` e a aba diz que a evidência não é conclusiva.
+
+### Detector de sazonalidade — e por que ele quase nunca dispara
+
+`φ` é sazonal, então um `ρ` congelado erra nos dois extremos do ano. O teste é
+de **heterogeneidade entre todos os meses**, não extremo contra extremo:
+
+    Q = Σ nₘ(φₘ − φ̄)² / (2·φ̄²)   ~   χ²(k−1) sob homogeneidade
+
+Comparar extremos é um teste de máximo disfarçado: com dez meses ruidosos algum
+sempre se destaca, e corrigir isso exige limiar tão alto que sazonalidade real
+deixa de ser detectada.
+
+**Controle verificado:** com 22 a 90 consultas/dia o detector não dispara nem
+com sazonalidade injetada — e isso está certo: `φ` de um mês com ~25 dias carrega
+erro padrão de ~0,4, maior que o sinal. Com 160/dia ele acerta os dois casos
+(dispara com sazonalidade, não dispara sem). Em nenhuma densidade houve falso
+positivo. A leitura prática: **clínica pequena não consegue estabelecer
+sazonalidade de `φ` com um ano de histórico** — e a tela diz isso em vez de
+fingir precisão.
+
+### Origem do risco do paciente
+
+`tb_agendamentos` **não tem campo de risco**; ele vive em `tb_faltas_data`
+(`probabilidade_falta`, `risco_falta`). `FirestoreAppointmentService._fromDoc`
+passou a ler, em ordem de precedência: probabilidade numérica → rótulo → escore.
+`RiskLevel.fromString` devolve `null` quando não reconhece — de propósito: cair
+em `low` por omissão faria todo paciente parecer de baixo risco, que é o modo de
+falha silenciosa que a estratificação deve evitar.
+
+`Appointment.pFaltaPrevista` carrega a probabilidade individual quando existe. É
+estritamente melhor que a faixa categórica — a faixa é um resumo de três níveis
+de algo que o pipeline já calcula como número.
+
+**Atenção:** enquanto o pipeline não denormalizar esses campos no agendamento
+(ou alguém não fizer o join com `tb_faltas_data`), a leitura não encontra nada e
+o comportamento continua o de antes.
+
+### Calibração — o gargalo real (F2)
+
+As taxas padrão de `ModeloRisco` (6% / 15% / 32%) são **ponto de partida, não
+medição**. `MonteCarloCalibracao.estimar` mede na base:
+
+1. Taxa observada por faixa, com intervalo de Wilson — faixa com menos de 50
+   consultas mantém o padrão e registra aviso.
+2. `phi` = média dos resíduos padronizados ao quadrado (1,0 sob independência).
+3. `rho` por momentos, invertendo `Cov(i,j) ≈ rho · pdf(z_i) · pdf(z_j)`.
+4. Backtest fora da amostra com cobertura, CRPS, pinball e ECE.
+
+Critério de saída: ≥ 120 dias **e** cobertura do P05–P95 dentro de ±5 pontos
+de 90%. A aplicação dos parâmetros medidos é **manual** — a calibração propõe,
+a pessoa aceita.
+
+### Limitações conhecidas
+
+- **`phi` é sazonal** e o `rho` da configuração é fixo. Reestimar semanalmente
+  é trabalho de operação, ainda não automatizado.
+- **A base não separa "paciente cancelou" de "clínica cancelou"** — são eventos
+  opostos no mesmo status. Enquanto o transacional não tiver esse campo, a taxa
+  de cancelamento fica superestimada. Dependência de produto, não de modelo.
+- **A calibração lê `appointmentsProvider`**, limitado à janela que a agenda
+  carrega. Para produção o histórico precisa de consulta própria, mais longa.
+- **Na web não há isolate**: amostragem pesada trava o frame. Reduzir `nRuns`
+  é a saída enquanto a simulação não for fatiada entre frames.
+- Fases **F4–F7** (dashboard em sombra, n8n, RIPD, produção) não começaram.
+
+### IA do simulador — ações e tutorial guiado
+
+A aba **Ações de IA** e os ícones "Explicar" ao lado de cada gráfico usam o
+mesmo padrão do planejador semanal (`agente_simulacao.dart`), com as mesmas
+**três travas**:
+
+1. **Não calcula.** `MontadorContexto` monta os fatos em Dart puro a partir do
+   resultado já determinístico (`SimulacaoResultado`/`CalibracaoResultado`). O
+   modelo nunca vê a agenda — só o resumo textual que este arquivo produz.
+2. **Não aplica.** Toda saída é texto numa folha ou num cartão. Nada é
+   gravado na agenda a partir de uma leitura de IA.
+3. **Não passa sem conferência.** Cada `ContextoAcao` carrega
+   `numerosPermitidos` — o conjunto de cifras extraídas dos próprios fatos.
+   `ValidadorNumeros` marca com ⚠️ qualquer número do texto que não veio dali.
+   A saída ainda aparece (não é bloqueada) — o aviso é para quem vai agir
+   conferir antes.
+
+O catálogo (`AcaoIa.catalogo`) tem duas partes: `AcaoIa.lista` (o que aparece
+na aba — explicar o dia, achar o gargalo, testar intervenção, diagnosticar a
+calibração, revisar equidade, redigir mensagem da fila, resumo para a gestão)
+e as ações de `CategoriaAcao.grafico`, que ficam **fora** de `lista` e só são
+disparadas pelo ícone "Explicar" ao lado do gráfico correspondente — listá-las
+nos dois lugares duplicaria a oferta (bug real, pego pelo teste de widget
+`monte_carlo_screen_test.dart` antes de chegar ao usuário).
+
+`AcoesController` roda **uma ação por vez** e expõe `indisponivel(acao)`, que
+barra o botão antes de qualquer chamada de IA quando a simulação ainda não
+resolveu, a data não tem agenda, a fila está vazia (para `mensagem_fila`) ou a
+calibração ainda não terminou (`exigeCalibracao`).
+
+O tour guiado `simulador` (`assistant_tours.dart`) cobre a tela inteira —
+header, abas, KPIs, fila, recomendação, gráfico, cenários, slots, ações de IA
+— com âncoras (`HelpAnchors.sim*`) registradas via `AssistantTarget` nos
+próprios widgets. O ícone **"?"** no header (`monte_carlo_screen.dart`) chama
+`ref.read(assistantProvider.notifier).startTour('simulador')` a qualquer
+momento; o assistente também reconhece perguntas livres sobre o simulador via
+`assistant_knowledge.dart` (ex.: "o que é P95?", "como funciona o simulador?").
+
+### Testes
+
+| Arquivo | Cobertura |
+|---------|-----------|
+| `monte_carlo_engine_test.dart` | 18 testes: oráculo exato, convergência do amostrador, preservação das marginais, determinismo, isolamento entre slots, bordas |
+| `monte_carlo_avancado_test.dart` | 11 testes: três estados, base de capacidade, modos de encaixe, equidade, fila |
+| `monte_carlo_calibracao_test.dart` | 16 testes: métricas distribucionais e **recuperação de parâmetros conhecidos** a partir de histórico sintético |
+| `monte_carlo_historico_demo_test.dart` | 18 testes: gerador sintético, recuperação de ponta a ponta, **controles de erro tipo I/poder** do detector de sazonalidade |
+| `monte_carlo_persistencia_test.dart` | 8 testes: mapeamento dos documentos, sem Firebase |
+| `monte_carlo_acoes_ia_test.dart` | 19 testes: catálogo, `MontadorContexto` (fatos e `numerosPermitidos` corretos), validador aplicado a texto simulado |
+| `monte_carlo_executor_acoes_test.dart` | 9 testes: `indisponivel()` em cada pré-condição, uma ação por vez |
+| `monte_carlo_screen_test.dart` | 19 testes de widget: 5 abas, ícone de ajuda abre o tour, ícones de gráfico, 3 larguras de viewport |
+
+---
+
+## 📈 Módulo 11 — Projeção de 12 meses (`features/projecao_12m/`)
+
+### Objetivo
+
+Responder a duas perguntas: **o que tende a acontecer se a clínica continuar
+como está**, e **o que muda com as intervenções da Agenda Clínica** — com
+intervalo honesto, não número pontual.
+
+Complementa o módulo Monte Carlo, que decide **amanhã** por slot. Este projeta
+**doze meses** no agregado, para conversa de planejamento e comercial.
+
+### Escopo: o que é código de app e o que é nuvem
+
+A especificação descreve quatro camadas e usa Azure ML para treino, registro e
+implantação. **Treino de AutoML, endpoints e pipelines são infraestrutura de
+nuvem, não código Flutter** e ficaram fora. O que está implementado é o motor
+que roda no app: cadeia de Markov, simulação com incerteza propagada, restrição
+de capacidade, decomposição financeira e o portão de aceite do forecast.
+
+### Três decisões de modelagem
+
+| # | Decisão | Por quê |
+|---|---------|---------|
+| 1 | **Três camadas de incerteza** | Forecast (lognormal com WAPE), parâmetro (Beta com força do histórico) e amostral (multinomial). Propagar só a última produz intervalo rotulado 90% que cobre ~46% dos futuros. |
+| 2 | **Sorteio multinomial único** | Falta, cancelamento e comparecimento são mutuamente exclusivos. Sortear falta sobre o total e cancelamento sobre o resíduo faz 10% pedidos virarem 7,8% realizados. |
+| 3 | **Capacidade é restrição dura** | Sem teto a simulação projeta mais atendimento do que a agenda comporta — e fica mais otimista justamente onde deveria esbarrar no limite físico. O que não cabe vira lista de espera, reportada à parte. |
+
+### Cadeia de Markov
+
+Sete estados; `reagendado` é estado **próprio**, não cancelamento — reagendar
+preserva o paciente e devolve a vaga; cancelar perde as duas coisas.
+
+- Suavização de Dirichlet: sem ela, estado nunca observado vira linha de zeros,
+  que não é distribuição e quebra a simulação em silêncio.
+- **Não-homogênea**: matriz por faixa de dias até a consulta. A confirmação se
+  concentra nas 72 horas finais; aplicar delta uniforme supõe que um lembrete de
+  30 dias vale tanto quanto um de 2.
+- Shrinkage empírico-bayesiano para partida a frio.
+- A matriz de referência reproduz a absorção publicada: 69,0 / 22,1 / 9,0.
+
+### Receita defensável
+
+Vaga reposta por paciente que já seria atendido depois é **antecipação de
+demanda**, não receita nova — no horizonte aparece uma vez, não duas. As duas
+cifras são reportadas separadas e nunca somadas. No exemplo da spec, somar tudo
+superestima em **21,9%**, valor reproduzido em teste.
+
+### Limitações conhecidas
+
+- **Nada é calibrado com dados reais.** Os parâmetros de impacto são hipótese;
+  a tela exibe isso de forma destacada e sai só depois do piloto.
+- O volume mensal é parâmetro manual, com sugestão a partir da agenda. Não há
+  forecast de série temporal implementado — o portão de aceite existe para
+  avaliar um, quando houver.
+- A cadeia não-homogênea está implementada e testada, mas a projeção usa a
+  matriz agregada: falta ligar as faixas ao laço de simulação.
+- Sem persistência: nenhuma projeção é gravada, então não há auditoria das
+  premissas que produziram um número apresentado.
+- Equidade (§8 da spec) e dimensionamento de piloto (§16) não implementados.
+
+### Testes
+
+| Arquivo | Cobertura |
+|---------|-----------|
+| `projecao_12m_test.dart` | 31 testes: amostradores (lognormal/Beta/multinomial), Markov (absorção publicada, suavização, faixas, shrinkage), três camadas de incerteza, capacidade, receita defensável e portão de aceite |
+| `projecao_12m_screen_test.dart` | 7 testes de widget, 3 larguras de viewport |

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/i18n/textos.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -170,7 +172,7 @@ class _HealthScoreScreenState extends ConsumerState<HealthScoreScreen> {
                         controller: _searchController,
                         onChanged: (v) => setState(() => _searchQuery = v),
                         decoration: InputDecoration(
-                          hintText: 'Buscar por nome ou CPF do paciente...',
+                          hintText: context.txt.t('health.buscarPorNomeOuCpfDoPaciente'),
                           prefixIcon: const Icon(Icons.search),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
